@@ -1,0 +1,31 @@
+{% extends "../base.html" %}
+{% block content %}
+    <!DOCTYPE html>
+    <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>University Digital Learning</title>
+    </head>
+    <body>
+
+        {% if user.is_authenticated %}
+            Hi {{ user.username }}!
+            <form action="{% url 'logout' %}" method="post">
+                {% csrf_token %}
+                <button type="submit">Log Out</button>
+            </form>
+            <a target="_blank" href="{% url "jitsi_meeting" %}">meeting</a>
+            <a href="{% url "send_message" %}">send message</a>
+            <a href="{% url "inbox" %}">inbox</a>
+        {% else %}
+            <p>You are not logged in</p>
+            <a href="{% url 'login' %}">Log In</a>
+            or
+            <a href="{% url 'signup' %}">Signup</a>
+        {% endif %}
+
+        
+    </body>
+    </html>
+{% endblock content %}

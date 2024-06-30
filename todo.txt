@@ -1,0 +1,3 @@
+if link (meeting) clicked procide the user token, that generated when user clicked the link.
+
+method that show sended links, that method generates the token, then if link exist provides it.
