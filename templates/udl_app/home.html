@@ -8,23 +8,86 @@
             <title>University Digital Learning</title>
     </head>
     <body>
+    {% if messages %}
+        {% for message in messages %}
+            {% if message.tags == 'error' %}
+                <div class="alert alert-danger" style="width: 50%;  margin: auto;">
+                    {{ message }}
+                </div>
+            {%else %}
+                <div class="alert alert-{{ message.tags }}" style="width: 50%;  margin: auto;">
+                    {{ message }}
+                </div>
+            {% endif %}
+        {% endfor %}
+    {% endif %}
 
+    
         {% if user.is_authenticated %}
-            Hi {{ user.username }}!
+            Hi {{ user.username }}! 
+            {% if user.is_professor %}
+            <p>your are a professor</p>
+
+            <li><a target="_blank" href="{% url "jitsi_meeting" %}">meeting</a></li>
+            <li><a href="{% url "send_message" %}">send message</a></li>
+            <li><a href="{% url "inbox" %}">inbox</a></li>
+            <li><a href="{% url 'school_list' %}">Schools</a></li>
+            <li><a href="{% url 'course_list' %}">Courses</a></li>
+            <li><a href="{% url 'lecture_list' %}">Lectures</a></li>
+            <li><a href="{% url 'assignment_list' %}">Assignments</a></li>
+            
+
+
+            {% elif user.is_student %}
+             
+            <p>your are a student</p>
+           
+        
+            <a href="{% url "inbox" %}">inbox</a>
+
+            {% elif user.is_superuser %}
+            <p>your are an superuser</p>
+            <li><a target="_blank" href="{% url "jitsi_meeting" %}">meeting</a></li>
+            <li><a href="{% url "send_message" %}">send message</a></li>
+            <li><a href="{% url "inbox" %}">inbox</a></li>
+
+            <li><a href="{% url 'admin_signup' %}">Admin Signup</a></li>
+            <li><a href="{% url 'professor_signup' %}">Professor Signup</a></li>
+          <li>  <a href="{% url 'student_signup' %}">Studnet Signup</a></li>
+            <li><a href="{% url 'course_list' %}">Courses</a></li>
+            <li><a href="{% url 'school_list' %}">Schools</a></li>
+            <li><a href="{% url 'lecture_list' %}">Lectures</a></li>
+            <li><a href="{% url 'assignment_list' %}">Assignments</a></li>
+
+            {% elif user.is_admin %}
+            <p>your are an Admin</p>
+            <li><a target="_blank" href="{% url "jitsi_meeting" %}">meeting</a></li>
+            <li><a href="{% url "send_message" %}">send message</a></li>
+            <li><a href="{% url "inbox" %}">inbox</a></li>
+
+            <li><a href="{% url 'admin_signup' %}">Admin Signup</a></li>
+            <li><a href="{% url 'professor_signup' %}">Professor Signup</a></li>
+          <li>  <a href="{% url 'student_signup' %}">Studnet Signup</a></li>
+            <li><a href="{% url 'course_list' %}">Courses</a></li>
+            <li><a href="{% url 'school_list' %}">Schools</a></li>
+            <li><a href="{% url 'lecture_list' %}">Lectures</a></li>
+            <li><a href="{% url 'assignment_list' %}">Assignments</a></li>
+
+            {% else %}
+            <p>your are a user</p>
+
+                You are a user.
+            {% endif %}
             <form action="{% url 'logout' %}" method="post">
                 {% csrf_token %}
                 <button type="submit">Log Out</button>
             </form>
-            <a target="_blank" href="{% url "jitsi_meeting" %}">meeting</a>
-            <a href="{% url "send_message" %}">send message</a>
-            <a href="{% url "inbox" %}">inbox</a>
-        {% else %}
-            <p>You are not logged in</p>
-            <a href="{% url 'login' %}">Log In</a>
-            or
-            <a href="{% url 'signup' %}">Signup</a>
+           
         {% endif %}
 
+        <hr>
+
+     
         
     </body>
     </html>

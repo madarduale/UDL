@@ -1,26 +1,50 @@
 {% load static %}
+{% load sass_tags %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>University Digital Learning</title>
-    <link rel="stylesheet" href="{% static 'bootstrap-5.0.2-dist/css/bootstrap.css' %}">
+
   <link rel="stylesheet" href="{% static 'bootstrap-5.0.2-dist/css/bootstrap.min.css' %}">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
   <link rel="stylesheet" href="{% static 'bootstrap-icons-1.11.3/font/bootstrap-icons.css' %}">
   <link rel="icon" type="image/x-icon" href="{% static 'favicon_io/favicon.ico' %}">  
+  <link rel="stylesheet" href="{% sass_src 'scss/styles.scss' %}">
 </head>
 <body>
-    {% block content %}
-    
-    {% endblock content %}
+  {% block sidebar %}
+        {% include 'aside.html' %}
+    {% endblock %}
+
+    {% block maincontent %}
+    <div id="main">
+        {% block topbar %}
+            {% include 'navbar.html' %}
+        {% endblock %}
+
+        <div class="container-fluid" id="main-content">
+            {% block content %}{% endblock content %}
+        </div>
+
+    </div>
+    {% endblock %}
    
 
     <script src="{% static 'bootstrap-5.0.2-dist/js/jquery-3.7.1.min.js' %}"></script>
-    <script src="{% static 'bootstrap-5.0.2-dist/js/bootstrap.js' %}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
     <script src="{% static 'bootstrap-5.0.2-dist/js/bootstrap.min.js' %}"></script>
-    <script src="{% static 'bootstrap-5.0.2-dist/js/bootstrap.bundle.js' %}"></script>
     <script src="{% static 'bootstrap-5.0.2-dist/js/bootstrap.bundle.min.js' %}"></script>
     <script src="https://kit.fontawesome.com/80d7ac95b2.js" crossorigin="anonymous"></script>
+    <script type="text/javascript" src="{% static 'js/main.js' %}"></script>
+    <script>
+        flatpickr(".datetimepicker", {
+            enableTime: true,
+            dateFormat: "Y-m-d H:i",
+        });
+    </script>
+    {% block extrascripts %}{% endblock extrascripts %}
 </body>
 </html>

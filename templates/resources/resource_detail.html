@@ -1,0 +1,193 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+{% load class_name %}
+{% block content %}
+
+<nav style="--bs-breadcrumb-divider: '>';" aria-label="breadcrumb">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="/">Home</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'resource_list' %}">resource list</a></li>
+
+    <li class="breadcrumb-item active" aria-current="page">resource detail</li>
+  </ol>
+</nav>
+
+{% if messages %}
+{% for message in messages %}
+    {% if message.tags == 'error' %}
+        <div class="alert alert-danger" style="width: 50%;  margin: auto;">
+            {{ message }}
+        </div>
+    {%else %}
+        <div class="alert alert-{{ message.tags }}" style="width: 50%;  margin: auto;">
+            {{ message }}
+        </div>
+    {% endif %}
+{% endfor %}
+{% endif %}
+
+{% if user.is_superuser %}
+<p> <a href="{% url 'resource_create'%}"><i class="fa fa-plus" aria-hidden="true"></i></a></p>
+
+<div class="card m-4" style="width: 18rem;">
+  {% if resource.resource_file %}
+
+  {% if resource.resource_file.url|endswith:".jpg" or resource.resource_file.url|endswith:".jpeg" or resource.resource_file.url|endswith:".png" %}
+  <img src="{{ resource.resource_file.url }}" alt="{{ resource.title }}" style="max-width: 100%;">
+    {% elif resource.resource_file.url|endswith:".pdf" %}
+        <iframe src="{{ resource.resource_file.url }}" style="width:100%; height:500px;"></iframe>
+    {% elif resource.resource_file.url|endswith:".mp4" or resource.resource_file.url|endswith:".webm" %}
+        <video controls style="max-width: 100%;">
+            <source src="{{ resource.resource_file.url }}" type="video/mp4">
+            Your browser does not support the video tag.
+        </video>
+    {% else %}
+        <p><a href="{{ resource.resource_file.url }}">View File</a></p>
+    {% endif %}
+
+  {% else %}
+    <p>No file available</p>
+  {% endif %}    <div class="card-body">
+      <h5 class="card-title">Title{{ resource.title }}</h5>
+      <p class="card-text">{{resource.description}}</p>
+    </div>
+    <ul class="list-group list-group-flush">
+      {% for lecture in resource.lecture.all %}
+      <li class="list-group-item">Lecture: {{lecture}}</li>
+      {% endfor %}
+    </ul>
+    <div class="card-body">
+        <a href="{% url 'resource_edit' resource.pk %}"><i class="fa fa-pencil-square-o" aria-hidden="true"></i></a>
+        <a href="{% url 'resource_delete' resource.pk %}"><i class="fa fa-trash-o" aria-hidden="true"></i></a>
+      </div>
+  </div>
+
+{% endif %}
+
+{% if user.is_admin %}
+
+<div class="card m-4" style="width: 18rem;">
+  {% if resource.resource_file %}
+
+  {% if resource.resource_file.url|endswith:".jpg" or resource.resource_file.url|endswith:".jpeg" or resource.resource_file.url|endswith:".png" %}
+  <img src="{{ resource.resource_file.url }}" alt="{{ resource.title }}" style="max-width: 100%;">
+    {% elif resource.resource_file.url|endswith:".pdf" %}
+        <iframe src="{{ resource.resource_file.url }}" style="width:100%; height:500px;"></iframe>
+    {% elif resource.resource_file.url|endswith:".mp4" or resource.resource_file.url|endswith:".webm" %}
+        <video controls style="max-width: 100%;">
+            <source src="{{ resource.resource_file.url }}" type="video/mp4">
+            Your browser does not support the video tag.
+        </video>
+    {% else %}
+        <p><a href="{{ resource.resource_file.url }}">View File</a></p>
+    {% endif %}
+
+  {% else %}
+    <p>No file available</p>
+  {% endif %}    <div class="card-body">
+      <h5 class="card-title">Title:{{ resource.title }}</h5>
+      <p class="card-text">{{resource.description}}</p>
+    </div>
+    <ul class="list-group list-group-flush">
+      {% for lecture in resource.lecture.all %}
+      <li class="list-group-item">Lecture: {{lecture}}</li>
+      {% endfor %}
+    </ul>
+    <div class="card-body">
+        <!-- Button trigger modal -->
+      <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#exampleModal">
+        <i class="fa fa-pencil-square-o" aria-hidden="true"></i>
+      </button>
+
+        <!-- Modal -->
+        <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+          <div class="modal-dialog">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel">resource Edit</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+              <div class="modal-body">
+                <form method="POST" enctype="multipart/form-data">
+                  {% csrf_token %}
+                  {{ form | crispy }}
+                  <button type="submit" class="btn btn-primary">Submit</button>
+                </form>
+              </div>
+              <!-- <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary">Save changes</button>
+              </div> -->
+            </div>
+          </div>
+        </div>
+        <a href="{% url 'resource_delete' resource.pk %}" class="btn btn-danger"><i class="fa fa-trash-o" aria-hidden="true"></i></a>
+      </div>
+  </div>
+
+{% endif %}
+
+{% if user.is_professor %}
+
+<div class="card m-4" style="width: 18rem;">
+  {% if resource.resource_file %}
+
+  {% if resource.resource_file.url|endswith:".jpg" or resource.resource_file.url|endswith:".jpeg" or resource.resource_file.url|endswith:".png" %}
+  <img src="{{ resource.resource_file.url }}" alt="{{ resource.title }}" style="max-width: 100%;">
+    {% elif resource.resource_file.url|endswith:".pdf" %}
+        <iframe src="{{ resource.resource_file.url }}" style="width:100%; height:500px;"></iframe>
+    {% elif resource.resource_file.url|endswith:".mp4" or resource.resource_file.url|endswith:".webm" %}
+        <video controls style="max-width: 100%;">
+            <source src="{{ resource.resource_file.url }}" type="video/mp4">
+            Your browser does not support the video tag.
+        </video>
+    {% else %}
+        <p><a href="{{ resource.resource_file.url }}">View File</a></p>
+    {% endif %}
+
+  {% else %}
+    <p>No file available</p>
+  {% endif %}    <div class="card-body">
+      <h5 class="card-title">Title{{ resource.title }}</h5>
+      <p class="card-text">{{resource.description}}</p>
+    </div>
+    <ul class="list-group list-group-flush">
+      {% for lecture in resource.lecture.all %}
+      <li class="list-group-item">Lecture: {{lecture}}</li>
+      {% endfor %}    
+    </ul>
+    <div class="card-body">
+        <!-- Button trigger modal -->
+      <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#exampleModal">
+        <i class="fa fa-pencil-square-o" aria-hidden="true"></i>
+      </button>
+
+        <!-- Modal -->
+        <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+          <div class="modal-dialog">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel">resource Edit</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+              <div class="modal-body">
+                <form method="POST" enctype="multipart/form-data">
+                  {% csrf_token %}
+                  {{ form | crispy }}
+                  <button type="submit" class="btn btn-primary">Submit</button>
+                </form>
+              </div>
+              <!-- <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary">Save changes</button>
+              </div> -->
+            </div>
+          </div>
+        </div>
+        <a href="{% url 'resource_delete' resource.pk %}" class="btn btn-danger"><i class="fa fa-trash-o" aria-hidden="true"></i></a>
+      </div>
+  </div>
+
+{% endif %}
+
+{% endblock content %}

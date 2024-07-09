@@ -1,0 +1,30 @@
+{% extends '../base.html' %}
+
+{% block content %}
+
+
+{% if user.is_superuser %}
+<p> <a href="{% url 'course_create'%}"><i class="fa fa-plus" aria-hidden="true"></i></a></p>
+
+<div class="card m-4" style="width: 18rem;">
+    <img src="{{course.image.url}}" class="card-img-top" alt="...">
+    <div class="card-body">
+      <h5 class="card-title">{{ course.title }}</h5>
+      <p class="card-text">{{course.description}}</p>
+    </div>
+    <ul class="list-group list-group-flush">
+      <li class="list-group-item">{{course.code}}</li>
+      <li class="list-group-item">{{course.school}}</li>
+      {% for professor in course.professors.all %}
+      <li class="list-group-item">{{professor.username }}</li>
+      {% endfor %}
+    </ul>
+    <div class="card-body">
+        <a href="{% url 'course_edit' course.pk %}"><i class="fa fa-pencil-square-o" aria-hidden="true"></i></a>
+        <a href="{% url 'course_delete' course.pk %}"><i class="fa fa-trash-o" aria-hidden="true"></i></a>
+      </div>
+  </div>
+
+{% endif %}
+
+{% endblock content %}

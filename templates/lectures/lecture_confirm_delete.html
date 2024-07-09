@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<nav style="--bs-breadcrumb-divider: '>';" aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="/">Home</a></li>
+      {% if user.is_student %}
+      <li class="breadcrumb-item"><a href="{% url 'enrolled_course_list'  %}">Course list</a></li>
+      {% else %}
+    <li class="breadcrumb-item"><a href="{% url 'lecture_list' %}">Lecture list</a></li>
+      {% endif %}
+      <li class="breadcrumb-item"><a href="{% url 'lecture_detail' lecture.pk %}">lecture detail</a></li>
+  
+      <li class="breadcrumb-item active" aria-current="page">delete</li>
+    </ol>
+  </nav>
+
+<div class="card" style="width: 55rem; height: 36rem;" >
+    <ul class="list-group list-group-flush">
+        <li class="list-group-item"><h2>Delete Lecture</h2></li>
+        <li class="list-group-item"><p>Are you sure you want to delete "{{ lecture.title }}"?</p></li>
+        
+    </ul>
+<form method="post">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-danger">Yes, delete</button>
+    <a href="{% url 'lecture_list' %}" class="btn btn-success">Cancel</a>
+</form>
+</div>
+
+{% endblock content %}

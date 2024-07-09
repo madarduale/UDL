@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>{{ profile.user.username }}</h2>
+<p>Bio: {{ profile.bio }}</p>
+<ul>
+    <li>Birth date: {{profile.birth_date}}</li>
+    <li>Location: {{profile.location}}</li>
+    <li>Telephone: {{profile.telephone}}</li>
+    <img src="{{profile.avatar.url}}" alt="user avatar">
+</ul>
+<a href="{% url 'profile_edit' profile.pk %}">Edit</a>
+<a href="{% url 'profile_delete' profile.pk %}">Delete</a>
+{% endblock content %}

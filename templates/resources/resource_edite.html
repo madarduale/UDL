@@ -1,0 +1,22 @@
+
+{% extends '../base.html' %}
+{% load crispy_forms_tags %}
+{% block content %}
+
+<nav style="--bs-breadcrumb-divider: '>';" aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="/">Home</a></li>
+      <li class="breadcrumb-item"><a href="{% url 'resource_list' %}">resource list</a></li>
+      <li class="breadcrumb-item"><a href="{% url 'resource_detail' resource.pk %}">resource detail</a></li>
+  
+      <li class="breadcrumb-item active" aria-current="page">create or update</li>
+    </ol>
+  </nav>
+
+<h2>New Resource</h2>
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ form | crispy }}
+    <button type="submit" class="btn btn-primary">Save</button>
+</form>
+{% endblock content %}

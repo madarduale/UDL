@@ -1,0 +1,96 @@
+{% extends '../base.html' %}
+
+{% block content %}
+<nav style="--bs-breadcrumb-divider: '>';" aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="/">Home</a></li>
+      
+      <li class="breadcrumb-item active" aria-current="page">courses</li>
+    </ol>
+</nav>
+{% if messages %}
+    {% for message in messages %}
+      {% if message.tags == 'error' %}
+          <div class="alert alert-danger" style="width: 50%;  margin: auto;">
+              {{ message }}
+          </div>
+      {%else %}
+          <div class="alert alert-{{ message.tags }}" style="width: 50%;  margin: auto;">
+              {{ message }}
+          </div>
+      {% endif %}
+    {% endfor %}
+{% endif %}
+<h2>My Courses</h2>
+{% if user.is_superuser %}
+<p> <a href="{% url 'enrolled_course_create'%}"><i class="fa fa-plus" aria-hidden="true"></i></a></p>
+{% for course in enrolled_courses %}
+<div class="card m-4" style="width: 18rem;">
+    <img src="{{course.image.url}}" class="card-img-top" alt="...">
+    <div class="card-body">
+      <h5 class="card-title"><a href="{% url 'course_detail' course.pk %}">{{ course.title }}<i class="fa fa-info-circle" aria-hidden="true"></i></a></h5>
+      <p class="card-text">{{course.description}}</p>
+    </div>
+    <ul class="list-group list-group-flush">
+      <li class="list-group-item">{{course.code}}</li>
+      <li class="list-group-item">{{course.school}}</li>
+      {% for professor in course.professors.all %}
+      <li class="list-group-item">{{professor.username }}</li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endfor %}
+{% endif %}
+
+{% if user.is_professor %}
+{% for course in enrolled_courses %}
+<div class="card m-4" style="width: 18rem;">
+    <img src="{{course.image.url}}" class="card-img-top" alt="...">
+    <div class="card-body">
+      <h5 class="card-title">{{ course.title }}</h5>
+      <p class="card-text">{{course.description}}</p>
+    </div>
+    <ul class="list-group list-group-flush">
+      <li class="list-group-item">{{course.code}}</li>
+      <li class="list-group-item">{{course.school}}</li>
+      {% for professor in course.professors.all %}
+      <li class="list-group-item">{{professor.username }}</li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endfor %}
+{% endif %}
+
+{% if user.is_student %}
+<div class="row">
+{% for course in enrolled_courses %}
+<div class="col-md-4">
+<div class="card m-4 border border-warning" style="width: 18rem;">
+  <button type="button" class="btn btn-primary position-relative w-50">
+    <a href="{% url 'student__course_lectures' course.course.pk %}" style="color: #ffff;">Lectures</a>
+    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+      {{course.course.lectures.count}}
+      <span class="visually-hidden">unread messages</span>
+    </span>
+  </button>
+    <img src="{{course.course.image.url}}" class="card-img-top" alt="..." width="50%", height="200vh">
+    <div class="card-body">
+      <h5 class="card-title">{{ course.course.title }}</h5>
+      <p class="card-text">{{course.course.description}}</p>
+    </div>
+    <ul class="list-group list-group-flush border border-primary">
+      <li class="list-group-item">{{course.course.code}}</li>
+      <li class="list-group-item">{{course.course.school}}</li>
+      {% for professor in course.course.professors.all %}
+      <li class="list-group-item">{{professor.username }}</li>
+      {% endfor %}
+    </ul>
+  </div>
+</div>
+  {% endfor %}
+</div>
+{% endif %}
+
+
+
+{% endblock content %}

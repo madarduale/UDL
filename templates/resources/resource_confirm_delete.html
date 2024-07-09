@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+
+<nav style="--bs-breadcrumb-divider: '>';" aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="/">Home</a></li>
+      <li class="breadcrumb-item"><a href="{% url 'resource_list' %}">resource list</a></li>
+      <li class="breadcrumb-item"><a href="{% url 'resource_detail' resource.pk %}">resource detail</a></li>
+  
+      <li class="breadcrumb-item active" aria-current="page">delete</li>
+    </ol>
+  </nav>
+
+  <div class="card" style="width: 55rem; height: 36rem;" >
+    <ul class="list-group list-group-flush">
+        <li class="list-group-item"><h2>Delete Resource</h2></li>
+        <li class="list-group-item"><p>Are you sure you want to delete "{{ resource.title }}"?</p></li>    
+    </ul>
+<form method="post">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-danger">Yes, delete</button>
+    <a href="{% url 'resource_list' %}" class="btn btn-success">Cancel</a>
+</form>
+</div>
+
+{% endblock content %}

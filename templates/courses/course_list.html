@@ -1,0 +1,187 @@
+{% extends '../base.html' %}
+{% load crispy_forms_tags %}
+{% block content %}
+
+
+<nav style="--bs-breadcrumb-divider: '>';" aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="/">Home</a></li>
+ 
+      <li class="breadcrumb-item active" aria-current="page">courses</li>
+    </ol>
+</nav>
+
+{% if messages %}
+    {% for message in messages %}
+      {% if message.tags == 'error' %}
+          <div class="alert alert-danger" style="width: 50%;  margin: auto;">
+              {{ message }}
+          </div>
+      {%else %}
+          <div class="alert alert-{{ message.tags }}" style="width: 50%;  margin: auto;">
+              {{ message }}
+          </div>
+      {% endif %}
+    {% endfor %}
+{% endif %}
+
+<h2>Courses</h2>
+{% if user.is_superuser %}
+
+<a href="{% url 'course_create' %}"><i class="fa fa-plus" aria-hidden="true"></i></a>
+
+<div class="row">
+{% for course in courses %}
+<div class="col-sm-6">
+<div class="card m-4 border border-warning" style="width: 18rem;">
+  <button type="button" class="btn btn-primary position-relative w-50">
+    Lectures
+    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+      {{course.lectures.count}}
+      <span class="visually-hidden">unread messages</span>
+    </span>
+  </button>
+    <img src="{{course.image.url}}" class="card-img-top" alt="course image", width="50%", height="200vh">
+    <div class="card-body">
+      <h5 class="card-title"><a href="{% url 'course_detail' course.pk %}">{{ course.title }}<i class="fa fa-info-circle" aria-hidden="true"></i></a></h5>
+      <p class="card-text">description: {{course.description}}</p>
+    </div>
+    <ul class="list-group list-group-flush">
+      <li class="list-group-item">code: {{course.code}}</li>
+      <li class="list-group-item">school: {{course.school}}</li>
+      {% for professor in course.professors.all %}
+      <li class="list-group-item">professor: {{professor.username }}</li>
+      {% endfor %}
+    </ul>
+  </div>
+</div>
+  {% endfor %}
+</div>
+{% endif %}
+
+{% if user.is_admin %}
+<!-- Button trigger modal -->
+<button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#exampleModal">
+  <i class="fa fa-plus" aria-hidden="true"></i>
+</button>
+
+<!-- Modal -->
+<div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="exampleModalLabel">Create course</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form method="POST" enctype="multipart/form-data">
+          {% csrf_token %}
+          {{ form | crispy }}
+          <button type="submit" class="btn btn-primary">Submit</button>
+        </form>
+      </div>
+      <!-- <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-primary">Save changes</button>
+      </div> -->
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  {% for course in courses %}
+  <div class="col-sm-6">
+
+    <div class="card m-4 border border-warning" style="width: 18rem;">
+      <button type="button" class="btn btn-primary position-relative w-50">
+        Lectures
+        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+          {{course.lectures.count}}
+        <span class="visually-hidden">unread messages</span>
+      </span>
+    </button>
+    <img src="{{course.image.url}}" class="card-img-top" alt="course image", width="50%", height="200vh">
+    <div class="card-body">
+      <h5 class="card-title"><a href="{% url 'course_detail' course.pk %}">{{ course.title }}<i class="fa fa-info-circle" aria-hidden="true"></i></a></h5>
+      <p class="card-text">description: {{course.description}}</p>
+    </div>
+    <ul class="list-group list-group-flush border border-primary">
+      <li class="list-group-item border border-warning">code: {{course.code}}</li>
+      <li class="list-group-item border border-info">school: {{course.school}}</li>
+      {% for professor in course.professors.all %}
+      <li class="list-group-item border border-primary">professor: {{professor.username }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+    {% endfor %}
+</div>
+
+{% endif %}
+
+{% if user.is_professor %}
+<div class="row">
+  {% for course in courses %}
+  <div class="col-sm-6">
+    <div class="card m-4 border border-warning" style="width: 18rem;">
+      <button type="button" class="btn btn-primary position-relative w-50">
+        Lectures
+        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+          {{course.lectures.count}}
+          <span class="visually-hidden">unread messages</span>
+        </span>
+      </button>
+        <img src="{{course.image.url}}" class="card-img-top" alt="course image", width="50%", height="200vh">
+        <div class="card-body">
+          <h5 class="card-title">Title: {{ course.title }}</h5>
+          <p class="card-text">description: {{course.description}}</p>
+        </div>
+        <ul class="list-group list-group-flush border border-primary">
+          <li class="list-group-item">code: {{course.code}}</li>
+          <li class="list-group-item">schoo: {{course.school}}</li>
+          {% for professor in course.professors.all %}
+          <li class="list-group-item">professor: {{professor.username }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+      {% endfor %}
+  </div>
+{% endif %}
+
+{% if user.is_student %}
+<div class="row">
+{% for course in courses %}
+<div class="col-sm-6">
+<div class="card m-4 border border-warning" style="width: 18rem;">
+  <button type="button" class="btn btn-primary position-relative w-50">
+    Lectures
+    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+      {{course.lectures.count}}
+      <span class="visually-hidden">unread messages</span>
+    </span>
+  </button>
+    <img src="{{course.image.url}}" class="card-img-top" alt="course image" width="50%" height="200vh">
+    <div class="card-body">
+      <h5 class="card-title">Title: {{ course.title }}</h5>
+      <p class="card-text">description: {{course.description}}</p>
+    </div>
+    <ul class="list-group list-group-flush border border-primary">
+      <li class="list-group-item">code: {{course.code}}</li>
+      <li class="list-group-item">school: {{course.school}}</li>
+      {% for professor in course.professors.all %}
+      <li class="list-group-item">professor: {{professor.username }}</li>
+      {% endfor %}
+    </ul>
+    <div class="card-body">
+      <a href="{% url 'enroll_course' course.id %}" class="btn btn-primary">Enroll</a>
+    </div>
+</div>
+</div>
+ {% endfor %}
+</div>
+{% endif %}
+
+
+
+{% endblock content %}

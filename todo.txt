@@ -1,3 +1,43 @@
 if link (meeting) clicked procide the user token, that generated when user clicked the link.
 
 method that show sended links, that method generates the token, then if link exist provides it.
+
+
+when created student and professor send there username and password the email entered form.
+ 
+@COURSE	
+professor only can see assigned course.
+student can see all course they enrolled.
+when enrolled course only will see lecture of this course.
+
+@USERS
+Admin can do CRUD all system.
+
+professor can update and view professor model and profile model, can view only assigned course and students enrolled that course. can CRU lecture, can create assignment, quiz, exam, question and resource then RUD assigngment, quiz, exam, question and resource of his assigned course, and can CRUD his assignmentgrading, , quizgrading and  examgrading. can create discussion, message, zoommeeting and comment then RUD  his discussion, comment, zoommeeting and message, and also can view message that he assigned as recipient. and can create choice then RUD the choice of question of his course. can view assignmentsubmission, examsubmission and quizsubmission.
+
+student can  view courses of his school and only enrolled course, can create discussion, message and comment then RUD  his discussion, comment and message,and also can view message that he assigned as recipient.  can view and update student and profile models.  can create, update and view his assignmentsubmission. can create and view his examsubmission and quizsubmission.  can view exam, quiz and assignment, lecture and zoommeeting of his enrolled course. 
+
+@SLIDE BAR
+some are not be active when clicked check their path
+
+@Admin
+update admin , add is_admin field to not allowed to enter admin dashboard only superuser can.
+change is_admin every copy of where now is is_superuser.
+admin url only superuser can enter. 
+
+@RESOURCES
+Display right side, when clicked button called resource it will open from right side.
+find how student_course_lecture method can get resource id to call it. 
+
+@PROFESSOR
+can see student who enrolled his course, then he can take exam and quiz and can send assignment.
+
+@AssigmentSubmission:
+if assignment due_date expired dont display assignment when student want to submit form. (assignment selection).
+
+@QUESTIONS AND CHOICES, and COMMENT
+question and choices are in the create page or list page for exam and quiz
+comment will be inside discussion page
+
+@SEARCHING BAR
+only user can search what he have exist.

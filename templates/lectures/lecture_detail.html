@@ -1,0 +1,160 @@
+{% extends '../base.html' %}
+{% load crispy_forms_tags %}
+{% load embed_video_tags %}
+{% load class_name %}
+{% block content %}
+
+<nav style="--bs-breadcrumb-divider: '>';" aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="/">Home</a></li>
+      {% if user.is_student %}
+      <li class="breadcrumb-item"><a href="{% url 'enrolled_course_list'  %}">Course list</a></li>
+      <li class="breadcrumb-item"><a href="{% url 'student__course_lectures' lecture.course.pk %}">Lecture list</a></li>
+      {% else %}
+    <li class="breadcrumb-item"><a href="{% url 'lecture_list' %}">lecture list</a></li>
+      {% endif %}
+      <li class="breadcrumb-item active" aria-current="page">lecture detail</li>
+    </ol>
+</nav>
+
+{% if messages %}
+    {% for message in messages %}
+      {% if message.tags == 'error' %}
+          <div class="alert alert-danger" style="width: 50%;  margin: auto;">
+              {{ message }}
+          </div>
+      {%else %}
+          <div class="alert alert-{{ message.tags }}" style="width: 50%;  margin: auto;">
+              {{ message }}
+          </div>
+      {% endif %}
+    {% endfor %}
+{% endif %}
+
+<div class="card" style="width: 55rem;">
+
+  <ul class="list-group list-group-flush">
+    {% if user.is_student %}
+    <button class="btn btn-primary" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasRight" aria-controls="offcanvasRight" style="width: 7rem; margin-left: 47.8rem;">Resources</button>
+
+    <div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvasRight" aria-labelledby="offcanvasRightLabel">
+      <div class="offcanvas-header">
+        <h5 id="offcanvasRightLabel">Resources</h5>
+        <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+      </div>
+      {% if resource %}
+      {% for resource in lecture.resources.all %}
+      <div class="offcanvas-body">
+        {% if resource.resource_file %}
+        <h2>Title: {{resource.title}}</h2>
+        {% if resource.resource_file.url|endswith:".jpg" or resource.resource_file.url|endswith:".jpeg" or resource.resource_file.url|endswith:".png" %}
+        <ul class="list-group border border-success">
+          <li class="list-group-item border border-primary"><img src="{{ resource.resource_file.url }}" alt="{{ resource.title }}" style="max-width: 100%;" height="200px" ></li>
+          <li class="list-group-item border border-warning"><a href="{{ resource.resource_file.url }}" download><i class="fas fa-download"></i></a></li>
+        </ul>
+          {% elif resource.resource_file.url|endswith:".pdf" or resource.resource_file.url|endswith:".docx" %}
+              <ul class="list-group border border-success">
+                <li class="list-group-item border border-primary"><iframe src="{{ resource.resource_file.url }}" style="width:100%; height:300px;" ></iframe></li>
+                <li class="list-group-item border border-warning"><a href="{{ resource.resource_file.url }}" download><i class="fas fa-download"></i></a></li>
+              </ul>
+          {% elif resource.resource_file.url|endswith:".mp4" or resource.resource_file.url|endswith:".webm" %}
+          
+              <video controls style="max-width: 100%;">
+                  <source src="{{ resource.resource_file.url }}" type="video/mp4">
+                  Your browser does not support the video tag.
+              </video>
+              <ul class="list-group border border-success">
+                <li class="list-group-item border border-primary"><video controls style="max-width: 100%;">
+                  <source src="{{ resource.resource_file.url }}" type="video/mp4">
+                  Your browser does not support the video tag.
+              </video></li>
+                <li class="list-group-item border border-warning"><a href="{{ resource.resource_file.url }}" download><i class="fas fa-download"></i></a></li>
+              </ul>
+          {% else %}
+          <ul class="list-group border border-success">
+            <li class="list-group-item border border-primary"><a href="{{ resource.resource_file.url }}">View File</a></li>
+            <li class="list-group-item border border-warning"><a href="{{ resource.resource_file.url }}" download><i class="fas fa-download"></i></a></li>
+          </ul>
+          {% endif %}
+    
+        {% else %}
+          <p>No file available</p>
+        {% endif %}
+      </div>
+      {% endfor %}
+      {% else %}
+      <div class="offcanvas-body">
+        <p>No resources available</p>
+      </div>
+      {% endif %} 
+    </div>
+    {% endif %}
+    <li class="list-group-item"><h2>Lecture: {{ lecture.title }}</h2></li>
+    <li class="list-group-item">Course: {{ lecture.course }}</li>
+    <li class="list-group-item">Video: 
+      {% video lecture.video as my_video %}
+  {% comment %}
+  Url: {{ my_video.url }}
+  Thumbnail: {{ my_video.thumbnail }}
+  Backend: {{ my_video.backend }}
+  {% endcomment %}
+  {% video my_video "800x400" %}
+  {% endvideo %}
+    </li>
+    <li class="list-group-item"><p class="text-break">description: {{ lecture.description }}</p></li>
+  </ul>
+</div>
+<hr>
+{% if user.is_student %}
+{% if completed %}
+<form method="post" action="{% url 'incomplete_lecture' lecture.pk %}">
+  {% csrf_token %}
+  <button type="submit" class="btn btn-primary">Mark as incomplete </button>
+</form>
+{% else %}
+<form method="post" action="{% url 'complete_lecture' lecture.pk %}">
+  {% csrf_token %}
+  <button type="submit" class="btn btn-primary">Mark as complete</button>
+</form>
+{% endif %}
+{% endif %}
+
+{% if user.is_superuser %}
+ <a href="{% url 'lecture_create'%}" class="btn btn-primary"><i class="fa fa-plus" aria-hidden="true"></i></a>
+<a href="{% url 'lecture_delete' lecture.pk %}" class="btn btn-danger"><i class="fa fa-trash-o" aria-hidden="true"></i></a>
+
+{% endif %}
+
+{% if  user.is_admin or user.is_professor %}
+<!-- Button trigger modal -->
+<button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#exampleModal">
+  <i class="fa fa-pencil-square-o" aria-hidden="true"></i>
+</button>
+
+<!-- Modal -->
+<div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="exampleModalLabel">Edit Lecture</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form method="POST" enctype="multipart/form-data">
+          {% csrf_token %}
+          {{ form | crispy }}
+          <button type="submit" class="btn btn-primary">Submit</button>
+        </form>
+      </div>
+      <!-- <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-primary">Save changes</button>
+      </div> -->
+    </div>
+  </div>
+</div>
+<a href="{% url 'lecture_delete' lecture.pk %}" class="btn btn-danger"><i class="fa fa-trash-o" aria-hidden="true"></i></a>
+{% endif %}
+
+
+{% endblock content %}
