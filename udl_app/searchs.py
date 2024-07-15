@@ -1,6 +1,6 @@
 from itertools import chain
 from django.views.generic import ListView
-from .models import Course, Quiz, Exam, Message, Discussion, Assignment
+from .models import Course, Exam, Message, Discussion, Assignment
 
 
 class SearchView(ListView):
@@ -20,7 +20,6 @@ class SearchView(ListView):
 
         if query is not None:
             course_results = Course.objects.search(query)
-            quiz_results = Quiz.objects.search(query)
             exam_results = Exam.objects.search(query)
             message_results = Message.objects.search(query)
             discussion_results = Discussion.objects.search(query)
@@ -28,7 +27,7 @@ class SearchView(ListView):
 
             # combine querysets
             queryset_chain = chain(
-                course_results, quiz_results, exam_results, message_results,
+                course_results, exam_results, message_results,
                 discussion_results, assignment_results
             )
             queryset = sorted(

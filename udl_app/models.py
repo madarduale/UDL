@@ -51,24 +51,16 @@ class BaseUser(AbstractUser):
     is_student = models.BooleanField(default=False)
     is_admin = models.BooleanField(default=False)
 
-
-    # def is_admin(self):
-    #     return hasattr(self, 'admin')
-
-    # def is_professor(self):
-    #     return hasattr(self, 'professor')
-
-    # def is_student(self):
-    #     return hasattr(self, 'student')
-    
     class Meta:
         verbose_name = 'User'
         verbose_name_plural = 'BaseUsers'
 
     def __str__(self):
         return self.username
+    
 class School(models.Model):
     name = models.CharField(max_length=100)
+    semesters = models.IntegerField(default=8)
 
     def __str__(self):
         return self.name
@@ -117,10 +109,19 @@ class Student(BaseUser):
     def __str__(self):
         return self.username
 
+class Semester(models.Model):
+        semester = models.IntegerField()
+        start_date = models.DateField()
+        end_date = models.DateField()
+
+        def __str__(self):
+            return f"Semester {self.semester} ({self.start_date} - {self.end_date})"
+
 class Course(models.Model):
     code = models.CharField(max_length=20, unique=True)
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True, null=True)
+    semester = models.ForeignKey(Semester, on_delete=models.CASCADE, related_name='courses')
     school = models.ForeignKey(School, on_delete=models.CASCADE, related_name='courses_school')
     professors = models.ManyToManyField(Professor, related_name='courses_taught')
     image = models.ImageField(upload_to='course_images/', default='course_images/uoh.jpg',  blank=True, null=True)
@@ -174,25 +175,17 @@ class AssignmentSubmission(models.Model):
     def __str__(self):
         return f"Submission by {self.student.username} for {self.assignment.title}"
 
-class Quiz(models.Model):
-    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='quizzes')
-    title = models.CharField(max_length=255)
-    description = models.TextField()
-    start_time = models.DateTimeField()
-    end_time = models.DateTimeField()
-    questions = models.ManyToManyField('Question', related_name='quizzes')
-    objects = CustomeManager()
-
-    def __str__(self):
-        return self.title
-    
-    def get_absolute_url(self):
-        return reverse('quiz_detail', kwargs={'pk': self.pk})
 
 class Exam(models.Model):
+    EXAM_TYPE_CHOICES = [
+        ('Midterm', 'Midterm'),
+        ('Final', 'Final'),
+        ('Quiz', 'Quiz'),
+    ]
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='exams')
     title = models.CharField(max_length=255)
     description = models.TextField()
+    exam_type = models.CharField(max_length=10, choices=EXAM_TYPE_CHOICES, default='Midterm')
     start_time = models.DateTimeField()
     end_time = models.DateTimeField()
     questions = models.ManyToManyField('Question', related_name='exams')
@@ -206,14 +199,6 @@ class Exam(models.Model):
         return reverse('exam_detail', kwargs={'pk': self.pk})
     
 
-class QuizSubmission(models.Model):
-    quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE, related_name='submissions')
-    student = models.ForeignKey(Student, on_delete=models.CASCADE)
-    submitted_at = models.DateTimeField(auto_now_add=True)
-    answers = models.JSONField(blank=True, null=True)
-
-    def __str__(self):
-        return f"{self.student.username}'s submission for {self.quiz.title}"
     
     
 
@@ -233,12 +218,6 @@ class Grade(models.Model):
     graded_at = models.DateTimeField(auto_now_add=True, blank=True)
     feedback = models.TextField(blank=True)
 
-class QuizGrading(Grade):
-    submission = models.OneToOneField(QuizSubmission, on_delete=models.CASCADE, primary_key=True)
-    
-    def __str__(self):
-        return f"Grading for {self.submission.student.username}'s Quiz {self.submission.quiz.title}"
-
 class ExamGrading(Grade):
     submission = models.OneToOneField(ExamSubmission, on_delete=models.CASCADE, primary_key=True)
     
@@ -247,7 +226,7 @@ class ExamGrading(Grade):
 
 
 class AssignmentGrade(Grade):
-    assignment = models.ForeignKey(AssignmentSubmission, on_delete=models.CASCADE) 
+    assignment_solution = models.ForeignKey(AssignmentSubmission, on_delete=models.CASCADE) 
 
     def __str__(self):
         return f"{self.student.username}'s grade for {self.assignment.title}"
@@ -255,7 +234,8 @@ class AssignmentGrade(Grade):
 
 class Question(models.Model):
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='questions')
-    text = models.TextField()
+    question = models.TextField()
+    marks = models.FloatField(default=1)
     QUESTION_TYPES = [
         ('MCQ', 'Multiple Choice'),
         ('TF', 'True/False'),
@@ -265,15 +245,16 @@ class Question(models.Model):
     question_type = models.CharField(max_length=3, choices=QUESTION_TYPES, default='MCQ')
 
     def __str__(self):
-        return self.text
+        return self.question
 
 class Choice(models.Model):
     question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='choices')
-    text = models.CharField(max_length=255)
-    is_correct = models.BooleanField(default=False)
+    choice = models.CharField(max_length=255, default='True', blank=True, null=True)
+    correct_choice = models.CharField(max_length=7, default='False', blank=True, null=True)
 
     def __str__(self):
-        return self.text
+        return f" {self.choice} in {self.question.question}"
+
 
 
 class Resource(models.Model):
@@ -378,7 +359,7 @@ class ZoomMeeting(models.Model):
 
 class Message(models.Model):
     sender = models.ForeignKey(BaseUser, on_delete=models.CASCADE, related_name='sended_messages')
-    recipient = models.ForeignKey(BaseUser, on_delete=models.CASCADE, related_name='received_messages')
+    recipients = models.ManyToManyField(BaseUser, related_name='received_messages')
     subject = models.CharField(max_length=100)
     content = models.TextField()
     url = models.URLField(max_length=200, blank=True, null=True)

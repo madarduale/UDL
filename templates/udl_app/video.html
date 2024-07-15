@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Video Call</title>
+</head>
+<body>
+    <h1>Video Call</h1>
+    <video id="localVideo" autoplay></video>
+    <video id="remoteVideo" autoplay></video>
+    <script>
+        const localVideo = document.getElementById('localVideo');
+        const remoteVideo = document.getElementById('remoteVideo');
+        const socket = new WebSocket('ws://' + window.location.host + '/ws/video-call/');
+
+        socket.onmessage = function(event) {
+            const data = JSON.parse(event.data);
+            console.log(data.message);
+        };
+
+        socket.onopen = function(event) {
+            console.log('WebSocket is connected.');
+        };
+
+        socket.onclose = function(event) {
+            console.log('WebSocket is closed.');
+        };
+
+        // Accessing the camera
+        navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+            .then(stream => {
+                localVideo.srcObject = stream;
+                stream.getTracks().forEach(track => {
+                    peerConnection.addTrack(track, stream);
+                });
+            })
+            .catch(error => console.error('Error accessing media devices.', error));
+
+        // WebRTC setup
+        const peerConnection = new RTCPeerConnection();
+
+        peerConnection.ontrack = function(event) {
+            remoteVideo.srcObject = event.streams[0];
+        };
+
+        // Handle WebRTC signaling
+        // Implement WebRTC signaling logic here
+    </script>
+</body>
+</html>

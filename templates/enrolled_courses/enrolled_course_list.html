@@ -1,9 +1,73 @@
 {% extends '../base.html' %}
 
 {% block content %}
+<style>
+  body {
+    background-color: #ffffff;
+  }
+  .card{
+    border: 1px solid #000;
+    border-radius: 10px;
+    box-shadow: 10px 10px 5px 5px #0d6efd;
+    width: 15rem;
+    height: 34rem;
+  }
+  .card:hover{
+    box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2);
+  }
+  .card .card-img-top{
+    border-radius: 10px 10px 0 0;
+    height: 10rem;
+  }
+  .card-title a{
+    color: #000;
+    text-decoration: none;
+  }
+  .card-title a:hover{
+    color: #000;
+    text-decoration: none;
+  }
+  .card-text{
+    color: #000;
+  }
+  .list-group-item{
+    color: #000;
+  }
+  .list-group-item:hover{
+    color: #000;
+  }
+  .btn-primary{
+    background-color: #0c035e;
+    border: none;
+  }
+  .btn-primary:hover{
+    background-color: #000;
+    border: none;
+  }
+  .btn-primary a{
+    color: #ffff;
+    text-decoration: none;
+  }
+  .btn-primary a:hover{
+    color: #ffff;
+    text-decoration: none;
+  }
+  .badge{
+    background-color: #ffff;
+    color: #000;
+  }
+  .badge:hover{
+    background-color: #ffff;
+    color: #000;
+  }
+
+
+
+
+</style>
 <nav style="--bs-breadcrumb-divider: '>';" aria-label="breadcrumb">
     <ol class="breadcrumb">
-      <li class="breadcrumb-item"><a href="/">Home</a></li>
+      <li class="breadcrumb-item"><a href=" {% url 'dashboard' %}">Dashbroad</a></li>
       
       <li class="breadcrumb-item active" aria-current="page">courses</li>
     </ol>
@@ -44,7 +108,7 @@
 
 {% if user.is_professor %}
 {% for course in enrolled_courses %}
-<div class="card m-4" style="width: 18rem;">
+<div class="card m-4" >
     <img src="{{course.image.url}}" class="card-img-top" alt="...">
     <div class="card-body">
       <h5 class="card-title">{{ course.title }}</h5>
@@ -62,33 +126,40 @@
 {% endif %}
 
 {% if user.is_student %}
+{% if enrolled_courses %}
 <div class="row">
 {% for course in enrolled_courses %}
-<div class="col-md-4">
-<div class="card m-4 border border-warning" style="width: 18rem;">
+<div class="col-md-3">
+<div class="card m-4 border border-warning" >
   <button type="button" class="btn btn-primary position-relative w-50">
     <a href="{% url 'student__course_lectures' course.course.pk %}" style="color: #ffff;">Lectures</a>
     <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
       {{course.course.lectures.count}}
-      <span class="visually-hidden">unread messages</span>
+      <span class="visually-hidden"></span>
     </span>
   </button>
     <img src="{{course.course.image.url}}" class="card-img-top" alt="..." width="50%", height="200vh">
     <div class="card-body">
-      <h5 class="card-title">{{ course.course.title }}</h5>
-      <p class="card-text">{{course.course.description}}</p>
+      <h5 class="card-title">Title: {{ course.course.title }}</h5>
+      <p class="card-text">Description: {{course.course.description | truncatewords:5}}</p>
     </div>
     <ul class="list-group list-group-flush border border-primary">
-      <li class="list-group-item">{{course.course.code}}</li>
-      <li class="list-group-item">{{course.course.school}}</li>
+      <li class="list-group-item">Code: {{course.course.code}}</li>
+      <li class="list-group-item">School: {{course.course.school}}</li>
+      <li class="list-group-item">Semester: {{course.course.semester}}</li>
       {% for professor in course.course.professors.all %}
-      <li class="list-group-item">{{professor.username }}</li>
+      <li class="list-group-item">Professor: {{professor.username }}</li>
       {% endfor %}
     </ul>
   </div>
 </div>
   {% endfor %}
 </div>
+{% else %}
+  <div class="alert alert-warning" style="width: 50%;  margin: auto;">
+    <strong>Warning!</strong> You have not enrolled in any course.
+  </div>
+  {% endif %}
 {% endif %}
 
 

@@ -41,3 +41,6 @@ comment will be inside discussion page
 
 @SEARCHING BAR
 only user can search what he have exist.
+
+@last
+Searching of all lists or important list.

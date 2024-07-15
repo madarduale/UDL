@@ -31,26 +31,32 @@
         {% url 'course_list' as courses %}
         {% url 'lecture_list' as lectures %}
         {% url 'assignment_list' as assignments %}
-        {% url 'quiz_list' as quizzes %}
+        {% url 'assignment_submission_list' as assignment_sub %}
+        {% url 'exam_submission_list' as exam_sub %}
         {% url 'exam_list' as exams %}
         {% url 'resource_list' as resources %}
         {% url 'enrolled_course_list' as enrolled_courses %}
         {% url 'discussion_list' as discussions %}
         {% url 'comment_list' as comments %}
-        {% url 'zoom_meeting_list' as zoom_meetings %}
-        {% url 'message_list' as messages %}
-        {% url 'admin_list' as admin_p %}
+        {% url 'jitsi_meeting' as meetings %}
+        {% url 'send_message' as messages %}
+        {% url 'inbox' as inbox %}
+        {% url 'professor_signup' as p_signup %}
+        {% url 'student_sgnup' as s_signup %}
+        {% url 'admin_sgnup' as a_signup %}
 
         <ul>
             {% if request.user.is_superuser %}
             <li class="{% if request.path == dash %}active{% endif %}">
                 <a href="{% url 'dashboard' %}"><i class="fas fa-tachometer-alt"></i>Dashboard</a>
             </li>
+            {% comment %}
             <li class="{% if request.path == hom %}active{% endif %}">
                 <a href="{% url 'home' %}"><i class="fas fa-home"></i>Home</a>
             </li>
+            {% endcomment %}
             <li class="{% if request.path == sl %}active{% endif %}">
-                <a href="{% url 'school_list' %}"><i class="fas fa-school"></i>School</a>
+                <a href="{% url 'school_list' %}"><i class="fas fa-school"></i>Faculty</a>
             </li>
             {% if  not user.is_superuser %}
             <li class="{% if request.path == prof %}active{% endif %}">
@@ -75,9 +81,6 @@
             <li class="{% if request.path == assignments %}active{% endif %}">
                 <a href="{% url 'assignment_list' %}"><i class="fas fa-tasks"></i>Assignments</a>
             </li>
-            <li class="{% if request.path == quizzes %}active{% endif %}">
-                <a href="{% url 'quiz_list' %}"><i class="fas fa-check-double"></i>Quizzes</a>
-            </li>
             <li class="{% if request.path == exams %}active{% endif %}">
                 <a href="{% url 'exam_list' %}"><i class="fas fa-clipboard-list"></i>Exams</a>
             </li>
@@ -88,11 +91,14 @@
                 <a href="{% url 'discussion_list' %}"><i class="fas fa-comments"></i>Discussions</a>
             </li>
 
-            <li class="{% if request.path == zoom_meetings %}active{% endif %}">
-                <a href="{% url 'zoom_meeting_list' %}"><i class="fas fa-video"></i>Zoom Meetings</a>
+            <li class="{% if request.path == meetings %}active{% endif %}">
+                <a href="{% url 'jitsi_meeting' %}"><i class="fas fa-video"></i>Zoom Meetings</a>
             </li>
             <li class="{% if request.path == messages %}active{% endif %}">
-                <a href="{% url 'message_list' %}"><i class="fas fa-envelope"></i>Messages</a>
+                <a href="{% url 'send_message' %}"><i class="fas fa-envelope"></i>Messages</a>
+            </li>
+            <li class="{% if request.path == inbox %}active{% endif %}">
+                <a href="{% url 'inbox' %}"><i class="fas fa-envelope"></i>Inbox</a>
             </li>
             {% endif %}
 
@@ -101,15 +107,16 @@
             <li class="{% if request.path == dash %}active{% endif %}">
                 <a href="{% url 'dashboard' %}"><i class="fas fa-tachometer-alt"></i>Dashboard</a>
             </li>
+            {% comment %}
             <li class="{% if request.path == hom %}active{% endif %}">
                 <a href="{% url 'home' %}"><i class="fas fa-home"></i>Home</a>
             </li>
-          
+          {% endcomment %}
             <li class="{% if request.path == prof %}active{% endif %}">
                 <a href="{% url 'profile' %}"><i class="fas fa-user"></i>Profile</a>
             </li>
             <li class="{% if request.path == sl %}active{% endif %}">
-                <a href="{% url 'school_list' %}"><i class="fas fa-school"></i>School</a>
+                <a href="{% url 'school_list' %}"><i class="fas fa-school"></i>Faculty</a>
             </li>
             <li class="{% if request.path == profs %}active{% endif %}">
                 <a href="{% url 'professor_list' %}"><i class="fas fa-chalkboard-teacher"></i>Professors</a>
@@ -126,9 +133,6 @@
             <li class="{% if request.path == assignments %}active{% endif %}">
                 <a href="{% url 'assignment_list' %}"><i class="fas fa-tasks"></i>Assignments</a>
             </li>
-            <li class="{% if request.path == quizzes %}active{% endif %}">
-                <a href="{% url 'quiz_list' %}"><i class="fas fa-check-double"></i>Quizzes</a>
-            </li>
             <li class="{% if request.path == exams %}active{% endif %}">
                 <a href="{% url 'exam_list' %}"><i class="fas fa-clipboard-list"></i>Exams</a>
             </li>
@@ -138,26 +142,33 @@
             <li class="{% if request.path == discussions %}active{% endif %}">
                 <a href="{% url 'discussion_list' %}"><i class="fas fa-comments"></i>Discussions</a>
             </li>
-
-            <li class="{% if request.path == zoom_meetings %}active{% endif %}">
-                <a href="{% url 'zoom_meeting_list' %}"><i class="fas fa-video"></i>Zoom Meetings</a>
+            <li class="{% if request.path == meetings %}active{% endif %}">
+                <a href="{% url 'jitsi_meeting' %}"><i class="fas fa-video"></i>Zoom Meetings</a>
             </li>
             <li class="{% if request.path == messages %}active{% endif %}">
-                <a href="{% url 'message_list' %}"><i class="fas fa-envelope"></i>Messages</a>
+                <a href="{% url 'send_message' %}"><i class="fas fa-envelope"></i>Messages</a>
+            </li>
+            <li class="{% if request.path == inbox %}active{% endif %}">
+                <a href="{% url 'inbox' %}"><i class="fas fa-envelope"></i>Inbox</a>
             </li>
             {% endif %}
 
 		
 			
 			{% if request.user.is_professor %}
+            <li class="{% if request.path == dash %}active{% endif %}">
+                <a href="{% url 'dashboard' %}"><i class="fas fa-tachometer-alt"></i>Dashboard</a>
+            </li>
+            {% comment %}
             <li class="{% if request.path == hom %}active{% endif %}">
                 <a href="{% url 'home' %}"><i class="fas fa-home"></i>Home</a>
             </li>
+            {% endcomment %}
             <li class="{% if request.path == prof %}active{% endif %}">
                 <a href="{% url 'profile' %}"><i class="fas fa-user"></i>Profile</a>
             </li>
             <li class="{% if request.path == sl %}active{% endif %}">
-                <a href="{% url 'school_list' %}"><i class="fas fa-school"></i>School</a>
+                <a href="{% url 'school_list' %}"><i class="fas fa-school"></i>Faculty</a>
             </li>
 			<li class="{% if request.path == courses %}active{% endif %}">
 				<a href="{% url 'course_list' %}"><i class="fas fa-book-open"></i>My Courses</a>
@@ -168,8 +179,8 @@
             <li class="{% if request.path == assignments %}active{% endif %}">
                 <a href="{% url 'assignment_list' %}"><i class="fas fa-tasks"></i>Assignments</a>
             </li>
-            <li class="{% if request.path == quizzes %}active{% endif %}">
-                <a href="{% url 'quiz_list' %}"><i class="fas fa-check-double"></i>Quizzes</a>
+            <li class="{% if request.path == exam_sub %}active{% endif %}">
+                <a href="{% url 'exam_submission_list' %}"><i class="fas fa-clipboard-list"></i>exam submission</a>
             </li>
             <li class="{% if request.path == exams %}active{% endif %}">
                 <a href="{% url 'exam_list' %}"><i class="fas fa-clipboard-list"></i>Exams</a>
@@ -182,24 +193,32 @@
             </li>
        
 
-            <li class="{% if request.path == zoom_meetings %}active{% endif %}">
-                <a href="{% url 'zoom_meeting_list' %}"><i class="fas fa-video"></i>Zoom Meetings</a>
+            <li class="{% if request.path == meetings %}active{% endif %}">
+                <a href="{% url 'jitsi_meeting' %}"><i class="fas fa-video"></i>Zoom Meetings</a>
             </li>
             <li class="{% if request.path == messages %}active{% endif %}">
-                <a href="{% url 'message_list' %}"><i class="fas fa-envelope"></i>Messages</a>
+                <a href="{% url 'send_message' %}"><i class="fas fa-envelope"></i>Messages</a>
+            </li>
+            <li class="{% if request.path == inbox %}active{% endif %}">
+                <a href="{% url 'inbox' %}"><i class="fas fa-envelope"></i>Inbox</a>
             </li>
 			{% endif %}
 
 
             {% if request.user.is_student %}
+            <li class="{% if request.path == dash %}active{% endif %}">
+                <a href="{% url 'dashboard' %}"><i class="fas fa-tachometer-alt"></i>Dashboard</a>
+            </li>
+            {% comment %}
             <li class="{% if request.path == hom %}active{% endif %}">
                 <a href="{% url 'home' %}"><i class="fas fa-home"></i>Home</a>
             </li>
+            {% endcomment %}
             <li class="{% if request.path == prof %}active{% endif %}">
                 <a href="{% url 'profile' %}"><i class="fas fa-user"></i>Profile</a>
             </li>
             <li class="{% if request.path == sl %}active{% endif %}">
-                <a href="{% url 'school_list' %}"><i class="fas fa-school"></i>School</a>
+                <a href="{% url 'school_list' %}"><i class="fas fa-school"></i>Faculty</a>
             </li>
             <li class="{% if request.path == enrolled_courses %}active{% endif %}">
                 <a href="{% url 'enrolled_course_list' %}"><i class="fas fa-book"></i>My Courses</a>
@@ -210,9 +229,10 @@
             <li class="{% if request.path == assignments %}active{% endif %}">
                 <a href="{% url 'assignment_list' %}"><i class="fas fa-tasks"></i>Assignments</a>
             </li>
-            <li class="{% if request.path == quizzes %}active{% endif %}">
-                <a href="{% url 'quiz_list' %}"><i class="fas fa-check-double"></i>Quizzes</a>
+            <li class="{% if request.path == assignment_sub %}active{% endif %}">
+                <a href="{% url 'assignment_submission_list' %}"><i class="fas fa-tasks"></i>Assignments submitted list</a>
             </li>
+
             <li class="{% if request.path == exams %}active{% endif %}">
                 <a href="{% url 'exam_list' %}"><i class="fas fa-clipboard-list"></i>Exams</a>
             </li>
@@ -221,11 +241,14 @@
                 <a href="{% url 'discussion_list' %}"><i class="fas fa-comments"></i>Discussions</a>
             </li>
 
-            <li class="{% if request.path == zoom_meetings %}active{% endif %}">
-                <a href="{% url 'zoom_meeting_list' %}"><i class="fas fa-video"></i>Zoom Meetings</a>
+            <li class="{% if request.path == meetings %}active{% endif %}">
+                <a href="{% url 'jitsi_meeting' %}"><i class="fas fa-video"></i>Zoom Meetings</a>
             </li>
             <li class="{% if request.path == messages %}active{% endif %}">
-                <a href="{% url 'message_list' %}"><i class="fas fa-envelope"></i>Messages</a>
+                <a href="{% url 'send_message' %}"><i class="fas fa-envelope"></i>Messages</a>
+            </li>
+            <li class="{% if request.path == inbox %}active{% endif %}">
+                <a href="{% url 'inbox' %}"><i class="fas fa-envelope"></i>Inbox</a>
             </li>
             {% endif %}
             <br />
@@ -247,6 +270,30 @@
 			<li>
 				<a href="{% url 'logout' %}"><i class="fas fa-sign-out-alt"></i>Logout</a>
 			</li>
+            
+            {% if user.is_admin %}
+                
+			<li  class="{% if request.path == p_signup %}active{% endif %}">
+				<a href="{% url 'professor_signup' %}"><i class="fa fa-user-plus"></i>Create professor</a>
+			</li>
+			<li  class="{% if request.path == s_signup %}active{% endif %}">
+				<a href="{% url 'student_signup' %}"><i class="fa fa-user-plus"></i>Create student</a>
+			</li>
+            {% endif %}
+            {% if user.is_superuser %}
+                
+			<li  class="{% if request.path == p_signup %}active{% endif %}">
+				<a href="{% url 'professor_signup' %}"><i class="fa fa-user-plus"></i>Create professor</a>
+			</li>
+			<li  class="{% if request.path == s_signup %}active{% endif %}">
+				<a href="{% url 'student_signup' %}"><i class="fa fa-user-plus"></i>Create student</a>
+			</li>
+			<li  class="{% if request.path == a_signup %}active{% endif %}">
+				<a href="{% url 'admin_signup' %}"><i class="fa fa-user-plus"></i>Create Admin</a>
+			</li>
+            {% endif %}
+                
+			
 			{% endif %}
 			
 			{% if user.is_authenticated %}

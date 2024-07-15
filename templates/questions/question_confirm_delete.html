@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+
+{% block title %}Delete Exam{% endblock title %}
+{% block content %}
+
+<style>
+    h2, p {
+
+         color: #ff0000;
+     }
+     
+ </style>
+
+<h2 >Delete Question</h2>
+<p>Are you sure you want to delete <strong> "{{ question.title }}"</strong> Question?</p>
+<form method="post">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-danger">Yes, delete</button>
+    <a href="{% url 'question_list' %}" class="btn btn-secondary">Cancel</a>
+</form>
+{% endblock content %}

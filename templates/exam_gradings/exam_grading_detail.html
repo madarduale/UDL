@@ -1,0 +1,96 @@
+{% extends '../base.html' %}
+{% load crispy_forms_tags %}
+{% block title %}Assignments{% endblock title %}
+{% block head %}
+    <!-- <style>
+        .list-group-item{
+            margin: 10px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+    </style> -->
+{% endblock head %}
+{% block content %}
+
+
+<nav style="--bs-breadcrumb-divider: '>';" aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="/">Home</a></li>
+      <l class="breadcrumb-item" ><a href="{% url 'exam_grading_list' %}">Exam Grades list</a></l>
+      <li class="breadcrumb-item active" aria-current="page">Exam Grade Detail</li>
+    </ol>
+</nav>
+
+{% if messages %}
+    {% for message in messages %}
+      {% if message.tags == 'error' %}
+          <div class="alert alert-danger" style="width: 50%;  margin: auto;">
+              {{ message }}
+          </div>
+      {%else %}
+          <div class="alert alert-{{ message.tags }}" style="width: 50%;  margin: auto;">
+              {{ message }}
+          </div>
+      {% endif %}
+    {% endfor %}
+{% endif %}
+
+<h2>Submitted Exam Grades Detail</h2>
+
+
+<br>
+<hr>
+
+<ul class="list-group">
+
+            <li class="list-group-item " style="background-color: #f8d7da;">exam Title: {{ exam_grading.submission.exam.title }}</li>
+
+            <li class="list-group-item">student: {{exam_grading.student.username}}</li>
+            <li class="list-group-item">graded at: {{exam_grading.graded_at}}</li>
+            <li class="list-group-item">grader: {{exam_grading.grader}}</li>
+            <li class="list-group-item">score: <strong>{{exam_grading.score}}</strong></li>
+            <li class="list-group-item">Feedback: {{exam_grading.feedback}}</li>
+
+            {% if user.is_admin or user.is_professor %}
+              <li class="list-group-item">
+                <!-- Button trigger modal -->
+              <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#exampleModal" style="width: 5rem;">
+                <i class="fa fa-pencil-square-o" aria-hidden="true"></i>
+              </button>
+
+              <!-- Modal -->
+              <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                  <div class="modal-content">
+                    <div class="modal-header">
+                      <h5 class="modal-title" id="exampleModalLabel">Update Grade </h5>
+                      <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                      <form method="POST" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        {{ form | crispy }}
+                          <a href="{% url 'exam_grading_detail' exam_grading.pk %}" class="btn btn-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-primary">Submit</button>
+                      </form>
+                    </div>
+                    <!-- <div class="modal-footer">
+                      <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                      <button type="button" class="btn btn-primary">Save changes</button>
+                    </div> -->
+                  </div>
+                </div>
+              </div>
+            <!-- <li class="list-group-item">Feedback: </li> -->
+             <a href="{% url 'exam_grading_delete' exam_grading.pk %}" class="btn btn-danger" style="width: 5rem;"><i class="fa fa-trash-o"></i> </a>
+              </li>
+            {% endif %}
+            <br>
+            <br>
+            <hr>
+            <br>    
+            <br>
+        </ul>
+
+{% endblock content %}

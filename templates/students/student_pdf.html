@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Student Information</title>
+</head>
+<body>
+    <h1>Student Information</h1>
+    <h2>{{ user.username }}</h2>
+    <p><strong>Full Name:</strong> {{ user.first_name }} {{ user.last_name }}</p>
+    <p><strong>Email:</strong> {{ user.email }}</p>
+    <h3>Profile</h3>
+    <p><strong>UID:</strong> {{ profile.UID }}</p>
+    <h3>Exam Grades</h3>
+    <ul>
+        {% for grade in exam_grades %}
+        <li>{{ grade.course.title }}: {{ grade.grade }}</li>
+        {% endfor %}
+    </ul>
+    <h3>Assignment Grades</h3>
+    <ul>
+        {% for grade in assignment_grades %}
+        <li>{{ grade.course.title }}: {{ grade.grade }}</li>
+        {% endfor %}
+    </ul>
+</body>
+</html>

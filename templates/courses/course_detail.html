@@ -4,7 +4,7 @@
 
 <nav style="--bs-breadcrumb-divider: '>';" aria-label="breadcrumb">
   <ol class="breadcrumb">
-    <li class="breadcrumb-item"><a href="/">Home</a></li>
+    <li class="breadcrumb-item"><a href=" {% url 'dashboard' %}">Dashbroad</a></li>
     <li class="breadcrumb-item"><a href="{% url 'course_list' %}">course list</a></li>
 
     <li class="breadcrumb-item active" aria-current="page">course detail</li>
@@ -25,7 +25,10 @@
 {% endfor %}
 {% endif %}
 
-{% if user.is_superuser %}
+
+<button class="btn btn-primary"><a href="{% url 'discussion_create' course.pk %}" style="color: #ffff;"> Create Discussion</a></button>
+
+{% if user.is_superuser or user.is_professor %}
 <p> <a href="{% url 'course_create'%}"><i class="fa fa-plus" aria-hidden="true"></i></a></p>
 
 <div class="card m-4" style="width: 18rem;">

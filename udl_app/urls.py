@@ -46,25 +46,6 @@ from .views import (
    assignment_grade_list,
    assignment_grade_delete,
 
-   quiz_create,
-   quiz_detail,
-   quiz_edit,
-   quiz_list,
-   quiz_delete,
-
-   quiz_submission_create,
-   quiz_submission_detail,
-   quiz_submission_edit,
-   quiz_submission_list,
-   quiz_submission_delete,
-
-
-   quiz_grading_create,
-   quiz_grading_detail,
-   quiz_grading_edit,
-   quiz_grading_list,
-   quiz_grading_delete,
-
    exam_create,
    exam_detail,
    exam_edit,
@@ -76,6 +57,8 @@ from .views import (
    exam_submission_edit,
    exam_submission_list,
    exam_submission_delete,
+   exam_submission_create_by_id,
+   exam_submission_list_by_id,
 
    exam_grading_create,
    exam_grading_detail,
@@ -154,9 +137,13 @@ from .views import (
    profile_list,
    profile_delete,
    profile,
+   profile_by_id,
 
    search,
    account_setting,
+   video_call,
+   student_pdf,
+   professor_pdf
 )
 
 urlpatterns = [
@@ -167,6 +154,9 @@ urlpatterns = [
    path('inbox/', inbox, name='inbox'),
    path('search/', search, name='query'),
    path('account/<int:pk>/edit/', account_setting, name='account'),
+   path('video-call/', video_call, name='video_call'),
+   path('student/<int:student_id>/pdf/', student_pdf, name='student_pdf'),
+    path('professor/<int:professor_id>/pdf/', professor_pdf, name='professor_pdf'),
 
    path('course/create/', course_create, name='course_create'),
    path('course/<int:pk>/', course_detail, name='course_detail'),
@@ -207,30 +197,14 @@ urlpatterns = [
    path('assignment_grades/', assignment_grade_list, name='assignment_grade_list'),
    path('assignment_grade/<int:pk>/delete/', assignment_grade_delete, name='assignment_grade_delete'),
 
-   path('quiz/create/', quiz_create, name='quiz_create'),
-   path('quiz/<int:pk>/', quiz_detail, name='quiz_detail'),
-   path('quiz/<int:pk>/edit/', quiz_edit, name='quiz_edit'),
-   path('quizzes/', quiz_list, name='quiz_list'),
-   path('quiz/<int:pk>/delete/', quiz_delete, name='quiz_delete'),
-
-   path('quiz_submission/create/', quiz_submission_create, name='quiz_submission_create'),
-   path('quiz_submission/<int:pk>/', quiz_submission_detail, name='quiz_submission_detail'),
-   path('quiz_submission/<int:pk>/edit/', quiz_submission_edit, name='quiz_submission_edit'),
-   path('quiz_submissions/', quiz_submission_list, name='quiz_submission_list'),
-   path('quiz_submission/<int:pk>/delete/', quiz_submission_delete, name='quiz_submission_delete'),
-
-   path('quiz_grading/create/', quiz_grading_create, name='quiz_grading_create'),
-   path('quiz_grading/<int:pk>/', quiz_grading_detail, name='quiz_grading_detail'),
-   path('quiz_grading/<int:pk>/edit/', quiz_grading_edit, name='quiz_grading_edit'),
-   path('quiz_gradings/', quiz_grading_list, name='quiz_grading_list'),
-   path('quiz_grading/<int:pk>/delete/', quiz_grading_delete, name='quiz_grading_delete'),
-
    path('exam/create/', exam_create, name='exam_create'),
    path('exam/<int:pk>/', exam_detail, name='exam_detail'),
    path('exam/<int:pk>/edit/', exam_edit, name='exam_edit'),
    path('exams/', exam_list, name='exam_list'),
    path('exam/<int:pk>/delete/', exam_delete, name='exam_delete'),
 
+   path('exam/<int:pk>/submit/', exam_submission_create_by_id, name='exam_submission_create_by_id'),
+   path('exam/<int:exam_id>/submissions/', exam_submission_list_by_id, name='exam_submission_list_by_id'),
    path('exam_submission/create/', exam_submission_create, name='exam_submission_create'),
    path('exam_submission/<int:pk>/', exam_submission_detail, name='exam_submission_detail'),
    path('exam_submission/<int:pk>/edit/', exam_submission_edit, name='exam_submission_edit'),   
@@ -272,6 +246,7 @@ urlpatterns = [
    path('discussion/<int:pk>/', discussion_detail, name='discussion_detail'),
    path('discussion/<int:pk>/edit/', discussion_edit, name='discussion_edit'),
    path('discussions/', discussion_list, name='discussion_list'),
+   path('courses/<int:course_id>/create_discussion/', discussion_create, name='discussion_create'),
    path('discussion/<int:pk>/delete/', discussion_delete, name='discussion_delete'),
 
    path('comment/create/', comment_create, name='comment_create'),
@@ -311,6 +286,7 @@ urlpatterns = [
    path('student/<int:pk>/delete/', student_delete, name='student_delete'),
 
    path('profile/', profile, name='profile'),
+   path('user/<int:pk>/', profile_by_id, name='profile_by_id'),
    path('profile/<int:pk>/', profile_detail, name='profile_detail'),
    path('profile/<int:pk>/edit/', profile_edit, name='profile_edit'),
    path('profiles/', profile_list, name='profile_list'),

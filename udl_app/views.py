@@ -2,8 +2,10 @@ from django.shortcuts import render, redirect
 from .models import Message
 # Create your views here.
 import jwt
+import json
 from .jaas_jwt import JaaSJwtBuilder
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
+from django.utils import timezone
 from django.conf import settings
 from django.contrib import messages
 from django.views import View
@@ -11,13 +13,15 @@ from django.contrib.auth.decorators import login_required
 from .searchs import SearchView
 from collections import defaultdict
 from django.db.models import Count
+import weasyprint
+from django.http import HttpResponse
+from django.template.loader import render_to_string
 from .forms import (
     MessageForm, CourseForm, LectureForm,
     AssignmentForm, AssigmmentGradeForm, AssignmentSubmissionForm,
-    QuizForm, QuizGradingForm, QuizSubmissionForm,
     ExamForm, ExamGradingForm, ExamSubmissionForm,
     QuestionForm, SchoolForm,
-    choiceForm, ResourceForm, EnrolledCourseForm,
+    ChoiceForm, ResourceForm, EnrolledCourseForm,
     DiscussionForm, CommentForm, ProfileForm,
     ZoomMeetingForm, AdminForm, ProfessorForm, StudentForm, BaseUserForm
 )
@@ -26,7 +30,6 @@ from django.shortcuts import render, get_object_or_404, redirect
 from .models import(
     Admin, Professor, Student, Course, Lecture, Grade,
     Assignment, AssignmentGrade, AssignmentSubmission,
-    Quiz, QuizGrading, QuizSubmission,
     Exam, ExamGrading, ExamSubmission,
     Question, Choice, Resource, EnrolledCourse,
     Discussion, Comment, Profile, LectureProgress,
@@ -40,13 +43,96 @@ admin_or_superuser_required, superuser_required,
 )
 
 
-    
+
+
+
+@login_required
+def student_pdf(request, student_id):
+    user = Student.objects.get(id=student_id)
+    profile = Profile.objects.get(user=user)
+    exam_grades = ExamGrading.objects.filter(student=user)
+    assignment_grades = AssignmentGrade.objects.filter(student=user)
+    template_name = 'students/student_pdf.html'
+    html_string = render_to_string(template_name, {
+        'user': user,
+        'profile': profile,
+        'exam_grades': exam_grades,
+        'assignment_grades': assignment_grades ,
+        # 'courses': courses if user_type == 'professor' else None
+    })
+
+    # Generate PDF
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="{user.username}_info.pdf"'
+    weasyprint.HTML(string=html_string).write_pdf(response)
+
+    return response
+
+@login_required
+def professor_pdf(request, professor_id):
+    user = Professor.objects.get(id=professor_id)
+    profile = Profile.objects.get(user=user)
+    courses = Course.objects.filter(professors=user)
+    template_name = 'professors/professor_pdf.html'
+
+     # Render HTML template with context data
+    html_string = render_to_string(template_name, {
+        'user': user,
+        'profile': profile,
+        # 'exam_grades': exam_grades if user_type == 'student' else None,
+        # 'assignment_grades': assignment_grades if user_type == 'student' else None,
+        'courses': courses 
+    })
+
+    # Generate PDF
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="{user.username}_info.pdf"'
+    weasyprint.HTML(string=html_string).write_pdf(response)
+
+    return response
+
+def generate_pdf(user_id, *args):
+    # Check if user is student or professor
+    user_type = args[0]
+
+    if user_type == 'student':
+        user = Student.objects.get(id=user_id)
+        profile = Profile.objects.get(user=user)
+        exam_grades = ExamGrading.objects.filter(student=user)
+        assignment_grades = AssignmentGrade.objects.filter(student=user)
+        template_name = 'students/student_pdf.html'
+    elif user_type == 'professor':
+        user = Professor.objects.get(id=user_id)
+        profile = Profile.objects.get(user=user)
+        courses = Course.objects.filter(professors=user)
+        template_name = 'professors/professor_pdf.html'
+    else:
+        return None
+
+    # Render HTML template with context data
+    html_string = render_to_string(template_name, {
+        'user': user,
+        'profile': profile,
+        'exam_grades': exam_grades if user_type == 'student' else None,
+        'assignment_grades': assignment_grades if user_type == 'student' else None,
+        'courses': courses if user_type == 'professor' else None
+    })
+
+    # Generate PDF
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="{user.username}_info.pdf"'
+    weasyprint.HTML(string=html_string).write_pdf(response)
+
+    return response
 
 
 @login_required(login_url='/accounts/login/')
 def home(request):
     return render(request, 'udl_app/home.html')
 
+
+def video_call(request):
+    return render(request, 'udl_app/video.html')
 
 
 def generate_jwt(user):
@@ -77,22 +163,27 @@ def jitsi_meet(request):
     return render(request, 'udl_app/jitsi_meet.html', {'jwt_token': decoded_token})
 
 
-
+@login_required
 def send_message(request):
     if request.method == 'POST':
-        form = MessageForm(request.POST)
+        form = MessageForm(request.POST, request=request)
         if form.is_valid():
             message = form.save(commit=False)
+            recipients = form.cleaned_data['recipients']
             message.sender = request.user
             message.save()
+            if recipients:
+                message.recipients.add(*recipients)
             messages.success(request, 'Message sent successfully!')
             return redirect('inbox') 
     else:
-        form = MessageForm()
+        form = MessageForm(request=request)
     return render(request, 'udl_app/send_message.html', {'form': form})
 
+@login_required
 def inbox(request):
-    received_messages = Message.objects.filter(recipient=request.user)
+    received_messages = Message.objects.filter(recipients=request.user)
+    print(received_messages)
     jwt_token = generate_jwt(request.user)
     decoded_token = jwt_token.decode("utf-8")
     print(decoded_token)
@@ -101,15 +192,76 @@ def inbox(request):
         if message.url:
             meeting_url = f'{message.url}?jwt={decoded_token}'
             message_urls.append((message, meeting_url))
+            # print(meeting_url)
+        else:
+            message_urls.append((message, None))
     return render(request, 'udl_app/inbox.html', {'message_urls':message_urls})
-
-
-
 
 
 @login_required
 def dashboard(request):
-    return render(request, 'dashboard.html')
+    user = request.user
+
+    # Initialize all counts to 0
+    count_students = 0
+    count_admins = 0
+    count_professors = 0
+    count_courses = 0
+    count_lectures = 0
+    count_schools = 0
+    count_exams = 0
+
+    if user.is_superuser:
+        count_students = Student.objects.count()
+        count_admins = Admin.objects.count()
+        count_professors = Professor.objects.count()
+        count_courses = Course.objects.count()
+        count_lectures = Lecture.objects.count()
+        count_schools = School.objects.count()
+        count_exams = Exam.objects.count()
+    elif user.is_admin:
+        admin = Admin.objects.get(id=user.id)
+        schools = admin.school.all()
+        count_schools = schools.count()
+
+        for school in schools:
+            count_students += Student.objects.filter(school=school).count()
+            count_professors += Professor.objects.filter(school=school).count()
+            count_courses += Course.objects.filter(school=school).count()
+            count_lectures += Lecture.objects.filter(course__school=school).count()
+            count_exams += Exam.objects.filter(course__school=school).count()
+        
+        count_admins = 1  # The current admin user
+    elif user.is_professor:
+        professor = Professor.objects.get(id=user.id)
+        count_professors = 1  # The current professor user
+        count_courses = professor.courses_taught.count()
+        count_lectures = Lecture.objects.filter(course__professors=professor).count()
+        count_exams = Exam.objects.filter(course__professors=professor).count()
+        count_students = Student.objects.filter(enrolled_student__course__professors=professor).count()
+        count_schools = professor.school.count()
+        count_admins = Admin.objects.filter(school__proffesor_school=professor).count()
+    elif user.is_student:
+        student = Student.objects.get(id=user.id)
+        count_students = 1  # The current student user
+        count_courses = student.enrolled_student.count()
+        enrolled_courses = student.enrolled_student.all()
+        count_lectures = Lecture.objects.filter(course__in=[ec.course for ec in enrolled_courses]).count()
+        count_exams = ExamSubmission.objects.filter(student=student).count()
+        count_schools = student.school.count()
+        count_admins = Admin.objects.filter(school__student_school=student).count()
+        count_professors = Professor.objects.filter(school__student_school=student).count()
+
+    return render(request, 'dashboard.html', {
+        'count_students': count_students,
+        'count_admins': count_admins,
+        'count_professors': count_professors,
+        'count_courses': count_courses,
+        'count_lectures': count_lectures,
+        'count_schools': count_schools,
+        'count_exams': count_exams
+    })
+
 
 @login_required
 def course_list(request):
@@ -423,8 +575,11 @@ def lecture_delete(request, pk):
 def assignment_list(request):
     user = request.user
     form = AssignmentForm(user=request.user)
+    current_time = timezone.now()
+    form2 = AssignmentSubmissionForm(user=request.user)
     if request.method == 'POST':
         assignment_create(request)
+        assignment_submission_create(request)
     if user.is_superuser:
         assignments = Assignment.objects.all()
     elif user.is_admin:
@@ -440,7 +595,7 @@ def assignment_list(request):
         assignments = Assignment.objects.filter(course__in=enrolled_course.values('course'))
     else:
         assignments = Assignment.objects.none()
-    return render(request, 'assignments/assignment_list.html', {'assignments': assignments, 'form': form})
+    return render(request, 'assignments/assignment_list.html', {'assignments': assignments, 'form': form, 'form2': form2, 'current_time': current_time})
 
 
 @login_required
@@ -491,38 +646,59 @@ def assignment_delete(request, pk):
 
 @login_required
 def assignment_submission_list(request):
-    assignment_submissions = AssignmentSubmission.objects.all()
-    return render(request, 'assignment_submissions/assignment_submission_list.html', {'assignment_submissions': assignment_submissions})
+    form = AssigmmentGradeForm(user=request.user)
+    if request.method == 'POST':
+        assignment_grade_create(request)
+    if request.user.is_superuser:
+        assignment_submissions = AssignmentSubmission.objects.all()
+    elif request.user.is_admin:
+        admin = get_object_or_404(Admin, id=request.user.id)
+        for school in admin.school.all():
+            assignment_submissions = AssignmentSubmission.objects.filter(assignment__course__school=school)
+    elif request.user.is_professor:
+        professor = get_object_or_404(Professor, id=request.user.id)
+        assignment_submissions = AssignmentSubmission.objects.filter(assignment__course__professors=professor)
+    elif request.user.is_student:
+        student = get_object_or_404(Student, id=request.user.id)
+        assignment_submissions = AssignmentSubmission.objects.filter(student=student)
+    else:
+        assignment_submissions = AssignmentSubmission.objects.none()
+    return render(request, 'assignment_submissions/assignment_submission_list.html', {'assignment_submissions': assignment_submissions, 'form': form})
 
 
 @login_required
 def assignment_submission_detail(request, pk):
     assignment_submission = get_object_or_404(AssignmentSubmission, pk=pk)
-    return render(request, 'assignment_submissions/assignment_submission_detail.html', {'assignment_submission': assignment_submission})
+    form  = AssignmentSubmissionForm(user=request.user, instance=assignment_submission)
+    if request.method == 'POST':
+        assignment_submission_edit(request, pk)
+    return render(request, 'assignment_submissions/assignment_submission_detail.html', {'assignment_submission': assignment_submission, 'form': form})
 
 
 @login_required
 def assignment_submission_create(request):
     if request.method == 'POST':
-        form = AssignmentSubmissionForm(request.POST)
+        form = AssignmentSubmissionForm(request.POST, request.FILES, user=request.user)
         if form.is_valid():
             form.save()
+            messages
             return redirect('assignment_submission_list')
     else:
-        form = AssignmentSubmissionForm()
-    return render(request, 'assignment_submissions/assignment_submission_form.html', {'form': form})
+        form = AssignmentSubmissionForm(user=request.user)
+    return render(request, 'assignment_submissions/assignment_submission_create.html', {'form': form})
 
 
 @login_required
 def assignment_submission_edit(request, pk):
     assignment_submission = get_object_or_404(AssignmentSubmission, pk=pk)
     if request.method == 'POST':
-        form = AssignmentSubmissionForm(request.POST, instance=assignment_submission)
+        form = AssignmentSubmissionForm(request.POST,  request.FILES, instance=assignment_submission, user=request.user)
         if form.is_valid():
             form.save()
+            messages.success(request, 'Assignment submission updated successfully!')
             return redirect('assignment_submission_list')
     else:
-        form = AssignmentSubmissionForm(instance=assignment_submission)
+        form = AssignmentSubmissionForm(instance=assignment_submission, user=request.user)
     return render(request, 'assignment_submissions/assignment_submission_form.html', {'form': form})
 
 
@@ -531,34 +707,51 @@ def assignment_submission_delete(request, pk):
     assignment_submission = get_object_or_404(AssignmentSubmission, pk=pk)
     if request.method == 'POST':
         assignment_submission.delete()
+        messages.success(request, 'Assignment submission deleted successfully!')
         return redirect('assignment_submission_list')
     return render(request, 'assignment_submissions/assignment_submission_confirm_delete.html', {'assignment_submission': assignment_submission})
 
 
 @login_required
 def assignment_grade_list(request):
-    assignment_grades = AssignmentGrade.objects.all()
+    if request.user.is_superuser:
+        assignment_grades = AssignmentGrade.objects.all()
+    elif request.user.is_admin:
+        admin = get_object_or_404(Admin, id=request.user.id)
+        for school in admin.school.all():
+            assignment_grades = AssignmentGrade.objects.filter(assignment_solution__assignment__course__school=school)
+    elif request.user.is_professor:
+        professor = get_object_or_404(Professor, id=request.user.id)
+        assignment_grades = AssignmentGrade.objects.filter(assignment_solution__assignment__course__professors=professor)
+    elif request.user.is_student:
+        student = get_object_or_404(Student, id=request.user.id)
+        assignment_grades = AssignmentGrade.objects.filter(assignment_solution__student=student)
+    else:
+        assignment_grades = AssignmentGrade.objects.none()
     return render(request, 'assignment_grades/assignment_grade_list.html', {'assignment_grades': assignment_grades})    
 
 
 @login_required 
 def assignment_grade_detail(request, pk):
     assignment_grade = get_object_or_404(AssignmentGrade, pk=pk)
-    return render(request, 'assignment_grades/assignment_grade_detail.html', {'assignment_grade': assignment_grade})
-
+    form = AssigmmentGradeForm(instance=assignment_grade, user=request.user)
+    if request.method == 'POST':
+        assignment_grade_edit(request, pk)
+    return render(request, 'assignment_grades/assignment_grade_detail.html', {'assignment_grade': assignment_grade, 'form': form})
 
 
 @login_required
 def assignment_grade_create(request):
     if request.method == 'POST':
-        form = AssigmmentGradeForm(request.POST)
+        form = AssigmmentGradeForm(request.POST, user=request.user)
         if form.is_valid():
             form.save()
+            messages.success(request, 'Assignment graded successfully!')
             return redirect('assignment_grade_list')
     else:
-        form = AssigmmentGradeForm()
+        form = AssigmmentGradeForm(user=request.user)
 
-    return render(request, 'assignment_grades/assignment_grade_form.html', {'form': form})
+    return render(request, 'assignment_grades/assignment_grade_create.html', {'form': form})
 
 
 @login_required
@@ -568,10 +761,11 @@ def assignment_grade_edit(request, pk):
         form = AssigmmentGradeForm(request.POST, instance=assignment_grade)
         if form.is_valid():
             form.save()
+            messages.success(request, 'Assignment grade updated successfully!')
             return redirect('assignment_grade_list')
     else:
         form = AssigmmentGradeForm(instance=assignment_grade)
-    return render(request, 'assignment_grades/assignment_grade_form.html', {'form': form})
+    return render(request, 'assignment_grades/assignment_grade_edite.html', {'form': form})
 
 
 @login_required
@@ -579,170 +773,74 @@ def assignment_grade_delete(request, pk):
     assignment_grade = get_object_or_404(AssignmentGrade, pk=pk)
     if request.method == 'POST':
         assignment_grade.delete()
+        messages.success(request, 'Assignment grade deleted successfully!')
         return redirect('assignment_grade_list')
     return render(request, 'assignment_grades/assignment_grade_confirm_delete.html', {'assignment_grade': assignment_grade})
 
-
-@login_required
-def quiz_list(request):
-    quizzes = Quiz.objects.all()
-    return render(request, 'quizzes/quiz_list.html', {'quizzes': quizzes})  
-
-
-@login_required
-def quiz_detail(request, pk):
-    quiz = get_object_or_404(Quiz, pk=pk)
-    return render(request, 'quizzes/quiz_detail.html', {'quiz': quiz})
-
-
-@login_required
-def quiz_create(request):
-    if request.method == 'POST':
-        form = QuizForm(request.POST)
-        if form.is_valid():
-            form.save()
-            return redirect('quiz_list')
-    else:
-        form = QuizForm()
-    return render(request, 'quizzes/quiz_form.html', {'form': form})
-
-
-@login_required
-def quiz_edit(request, pk):
-    quiz = get_object_or_404(Quiz, pk=pk)
-    if request.method == 'POST':
-        form = QuizForm(request.POST, instance=quiz)
-        if form.is_valid():
-            form.save()
-            return redirect('quiz_list')
-    else:
-        form = QuizForm(instance=quiz)
-    return render(request, 'quizzes/quiz_form.html', {'form': form})
-
-
-@login_required
-def quiz_delete(request, pk):
-    quiz = get_object_or_404(Quiz, pk=pk)
-    if request.method == 'POST':
-        quiz.delete()
-        return redirect('quiz_list')
-    return render(request, 'quizzes/quiz_confirm_delete.html', {'quiz': quiz})
-
-
-@login_required
-def quiz_submission_list(request):
-    quiz_submissions = QuizSubmission.objects.all()
-    return render(request, 'quiz_submissions/quiz_submission_list.html', {'quiz_submissions': quiz_submissions})
-
-
-@login_required
-def quiz_submission_detail(request, pk):
-    quiz_submission = get_object_or_404(QuizSubmission, pk=pk)
-    return render(request, 'quiz_submissions/quiz_submission_detail.html', {'quiz_submission': quiz_submission})
-
-
-@login_required
-def quiz_submission_create(request):
-    if request.method == 'POST':
-        form = QuizSubmissionForm(request.POST)
-        if form.is_valid():
-            form.save()
-            return redirect('quiz_submission_list')
-    else:
-        form = QuizSubmissionForm()
-    return render(request, 'quiz_submissions/quiz_submission_form.html', {'form': form})
-
-
-@login_required
-def quiz_submission_edit(request, pk):
-    quiz_submission = get_object_or_404(QuizSubmission, pk=pk)
-    if request.method == 'POST':
-        form = QuizSubmissionForm(request.POST, instance=quiz_submission)
-        if form.is_valid():
-            form.save()
-            return redirect('quiz_submission_list')
-    else:
-        form = QuizSubmissionForm(instance=quiz_submission)
-    return render(request, 'quiz_submissions/quiz_submission_form.html', {'form': form})
-
-
-@login_required
-def quiz_submission_delete(request, pk):
-    quiz_submission = get_object_or_404(QuizSubmission, pk=pk)
-    if request.method == 'POST':
-        quiz_submission.delete()
-        return redirect('quiz_submission_list')
-    return render(request, 'quiz_submissions/quiz_submission_confirm_delete.html', {'quiz_submission': quiz_submission})
-
-
-@login_required
-def quiz_grading_list(request):
-    quiz_gradings = QuizGrading.objects.all()
-    return render(request, 'quiz_gradings/quiz_grading_list.html', {'quiz_gradings': quiz_gradings})
-
-
-@login_required
-def quiz_grading_detail(request, pk):
-    quiz_grading = get_object_or_404(QuizGrading, pk=pk)
-    return render(request, 'quiz_gradings/quiz_grading_detail.html', {'quiz_grading': quiz_grading})
-
-
-@login_required
-def quiz_grading_create(request):
-    if request.method == 'POST':
-        form = QuizGradingForm(request.POST)
-        if form.is_valid():
-            form.save()
-            return redirect('quiz_grading_list')
-    else:
-        form = QuizGradingForm()
-    return render(request, 'quiz_gradings/quiz_grading_form.html', {'form': form})
-
-
-@login_required
-def quiz_grading_edit(request, pk):
-    quiz_grading = get_object_or_404(QuizGrading, pk=pk)
-    if request.method == 'POST':
-        form = QuizGradingForm(request.POST, instance=quiz_grading)
-        if form.is_valid():
-            form.save()
-            return redirect('quiz_grading_list')
-    else:
-        form = QuizGradingForm(instance=quiz_grading)
-    return render(request, 'quiz_gradings/quiz_grading_form.html', {'form': form})
-
-
-@login_required
-def quiz_grading_delete(request, pk):
-    quiz_grading = get_object_or_404(QuizGrading, pk=pk)
-    if request.method == 'POST':
-        quiz_grading.delete()
-        return redirect('quiz_grading_list')
-    return render(request, 'quiz_gradings/quiz_grading_confirm_delete.html', {'quiz_grading': quiz_grading})
-
-
-@login_required
-def exam_list(request):
-    exams = Exam.objects.all()
-    return render(request, 'exams/exam_list.html', {'exams': exams})
-
-
-@login_required
-def exam_detail(request, pk):
-    exam = get_object_or_404(Exam, pk=pk)
-    return render(request, 'exams/exam_detail.html', {'exam': exam})
 
 
 @login_required
 def exam_create(request):
     if request.method == 'POST':
-        form = ExamForm(request.POST)
+        form = ExamForm(request.POST, user=request.user)
         if form.is_valid():
             form.save()
+            messages.success(request, 'Exam created successfully!')
             return redirect('exam_list')
     else:
-        form = ExamForm()
-    return render(request, 'exams/exam_form.html', {'form': form})
+        form = ExamForm(user=request.user)
+    return render(request, 'exams/exam_create.html', {'form': form})
+
+
+@login_required
+def exam_list(request):
+    form = ExamForm(user=request.user)
+    form2 = ExamSubmissionForm(user=request.user)
+    form3 = QuestionForm(user=request.user)
+    form4 = ChoiceForm(user=request.user)
+    current_time = timezone.now()
+    if request.method == 'POST':
+        exam_create(request)
+        # exam_submission_create(request)
+        question_create(request)
+        choice_create(request)
+    if request.user.is_superuser:
+        exams = Exam.objects.all()
+    elif request.user.is_admin:
+        admin = get_object_or_404(Admin, id=request.user.id)
+        for school in admin.school.all():
+            exams = Exam.objects.filter(course__school=school)
+    elif request.user.is_professor:
+        professor = get_object_or_404(Professor, id=request.user.id)
+        exams = Exam.objects.filter(course__professors=professor)
+    elif request.user.is_student:
+        student = get_object_or_404(Student, id=request.user.id)
+        enrolled_course = EnrolledCourse.objects.filter(student=student)
+        exams = Exam.objects.filter(course__in=enrolled_course.values('course'))
+    else:
+        exams = Exam.objects.none()
+    return render(request, 'exams/exam_list.html', {'exams': exams, 'form': form, 'form2': form2, 'current_time': current_time, 'form3': form3, 'form4': form4})
+
+
+@login_required
+def exam_detail(request, pk):
+    user = request.user
+    exam = get_object_or_404(Exam, pk=pk)
+    submited_exams = ExamSubmission.objects.filter(exam=exam)
+
+    for submited_exam in submited_exams:
+        if submited_exam.student.id == user:
+            messages.error(request, 'You have already submited the exam!')
+            return redirect('exam_list')
+        
+    group_questions_by_type = defaultdict(list)
+    for question in exam.questions.all():
+        group_questions_by_type[question.question_type].append(question)
+    form = ExamForm(instance=exam, user=request.user)
+    current_time = timezone.now()
+    if request.method == 'POST':
+        exam_edit(request, pk)
+    return render(request, 'exams/exam_detail.html', {'exam': exam, 'form': form, 'current_time': current_time, 'group_questions_by_type': dict(group_questions_by_type)})
 
 
 @login_required
@@ -752,10 +850,11 @@ def exam_edit(request, pk):
         form = ExamForm(request.POST, instance=exam)
         if form.is_valid():
             form.save()
+            messages.success(request, 'Exam updated successfully!')
             return redirect('exam_list')
     else:
         form = ExamForm(instance=exam)
-    return render(request, 'exams/exam_form.html', {'form': form})
+    return render(request, 'exams/exam_edite.html', {'form': form, 'exam': exam})
 
 
 @login_required
@@ -763,15 +862,75 @@ def exam_delete(request, pk):
     exam = get_object_or_404(Exam, pk=pk)
     if request.method == 'POST':
         exam.delete()
+        messages.success(request, 'Exam deleted successfully!')
         return redirect('exam_list')
     return render(request, 'exams/exam_confirm_delete.html', {'exam': exam})
 
 
 @login_required
-def exam_submission_list(request):
-    exam_submissions = ExamSubmission.objects.all()
-    return render(request, 'exam_submissions/exam_submission_list.html', {'exam_submissions': exam_submissions})
+def exam_submission_list_by_id(request, exam_id):
+    form = ExamGradingForm(user=request.user)
+    if request.method == 'POST':
+        exam_grading_create(request)
 
+    exam = get_object_or_404(Exam, pk=exam_id)
+    submissions = ExamSubmission.objects.filter(exam=exam)
+    submission_data = []
+    for submission in submissions:
+        student_answers = []
+        for question_id, answer in submission.answers.items():
+            question = get_object_or_404(Question, pk=question_id)
+            correct_choice = Choice.objects.filter(question=question, correct_choice=True).first()
+            if isinstance(answer, int):  # MCQ or TF
+                selected_choice = get_object_or_404(Choice, pk=answer)
+                is_correct = selected_choice.id == correct_choice.id if correct_choice else False
+                student_answers.append({
+                    'question': question.question,
+                    'marks': question.marks,
+                    'answer': selected_choice.choice,
+                    'correct_answer': correct_choice.choice if correct_choice else 'N/A',
+                    'is_correct': is_correct,
+                    'marks_awarded': question.marks if is_correct else 0
+                })
+            else:  # SA or LA
+                student_answers.append({
+                    'question': question.question,
+                    'marks': question.marks,
+                    'answer': answer,
+                    'correct_answer': 'N/A',  # SA and LA need manual grading
+                    'is_correct': 'N/A',
+                    'marks_awarded': 'N/A'
+                })
+        submission_data.append({
+            'student': submission.student.username,
+            'submitted_at': submission.submitted_at,
+            'answers': student_answers
+        })
+
+    return render(request, 'exam_submissions/exam_submission_list_by_id.html', {
+        'exam': exam,
+        'submission_data': submission_data,
+        'form': form
+    })
+
+@login_required
+def exam_submission_list(request):
+    user = request.user
+    if user.is_superuser:
+        exam_submissions = ExamSubmission.objects.all()
+    elif user.is_admin:
+        admin = get_object_or_404(Admin, id=user.id)
+        for school in admin.school.all():
+            exam_submissions = ExamSubmission.objects.filter(exam__course__school=school)
+    elif user.is_professor:
+        professor = get_object_or_404(Professor, id=user.id)
+        exam_submissions = ExamSubmission.objects.filter(exam__course__professors=professor)
+    elif user.is_student:
+        student = get_object_or_404(Student, id=user.id)
+        exam_submissions = ExamSubmission.objects.filter(student=student)
+    else:
+        exam_submissions = ExamSubmission.objects.none()
+    return render(request, 'exam_submissions/exam_submission_list.html', {'exam_submissions': exam_submissions})
 
 
 @login_required
@@ -779,6 +938,32 @@ def exam_submission_detail(request, pk):
     exam_submission = get_object_or_404(ExamSubmission, pk=pk)
     return render(request, 'exam_submissions/exam_submission_detail.html', {'exam_submission': exam_submission})
 
+
+@login_required
+def exam_submission_create_by_id(request, pk):
+    exam = get_object_or_404(Exam, pk=pk)
+    student = get_object_or_404(Student, id=request.user.id)
+    if request.method == 'POST':
+        answers = {}
+        for question in exam.questions.all():
+            question_key = f'question{question.id}'
+            if question.question_type in ['MCQ', 'TF']:
+                selected_choice_id = request.POST.get(question_key)
+                if selected_choice_id:
+                    answers[question.id] = int(selected_choice_id)
+            elif question.question_type in ['SA', 'LA']:
+                written_answer = request.POST.get(question_key)
+                if written_answer:
+                    answers[question.id] = written_answer
+
+        ExamSubmission.objects.create(
+            exam=exam,
+            student=student,
+            answers=answers
+        )
+        # return redirect('exam_submission_list', exam_id=exam.pk)
+        return redirect('exam_list')
+    return render(request, 'exam_submissions/exam_submission_create_by_id.html', {'exam': exam})    
 
 @login_required
 def exam_submission_create(request):
@@ -816,25 +1001,43 @@ def exam_submission_delete(request, pk):
 
 @login_required
 def exam_grading_list(request):
-    exam_gradings = ExamGrading.objects.all()
+    user = request.user
+    if user.is_superuser:
+        exam_gradings = ExamGrading.objects.all()
+    elif user.is_admin:
+        admin = get_object_or_404(Admin, id=user.id)
+        for school in admin.school.all():
+            exam_gradings = ExamGrading.objects.filter(submission__exam__course__school=school)
+    elif user.is_professor:
+        professor = get_object_or_404(Professor, id=user.id)
+        exam_gradings = ExamGrading.objects.filter(submission__exam__course__professors=professor)
+    elif user.is_student:
+        student = get_object_or_404(Student, id=user.id)
+        exam_gradings = ExamGrading.objects.filter(submission__student=student)
+    else:
+        exam_gradings = ExamGrading.objects.none()
     return render(request, 'exam_gradings/exam_grading_list.html', {'exam_gradings': exam_gradings})
 
 
 @login_required
 def exam_grading_detail(request, pk):
     exam_grading = get_object_or_404(ExamGrading, pk=pk)
-    return render(request, 'exam_gradings/exam_grading_detail.html', {'exam_grading': exam_grading})
+    form = ExamGradingForm(instance=exam_grading, user=request.user)
+    if request.method == 'POST':
+        exam_grading_edit(request, pk)
+    return render(request, 'exam_gradings/exam_grading_detail.html', {'exam_grading': exam_grading, 'form': form})
 
 
 @login_required
 def exam_grading_create(request):
     if request.method == 'POST':
-        form = ExamGradingForm(request.POST)
+        form = ExamGradingForm(request.POST, user=request.user)
         if form.is_valid():
             form.save()
+            messages.success(request, 'Exam graded successfully!')
             return redirect('exam_grading_list')
     else:
-        form = ExamGradingForm()
+        form = ExamGradingForm(user=request.user)
     return render(request, 'exam_gradings/exam_grading_form.html', {'form': form})
 
 
@@ -845,10 +1048,11 @@ def exam_grading_edit(request, pk):
         form = ExamGradingForm(request.POST, instance=exam_grading)
         if form.is_valid():
             form.save()
+            messages.success(request, 'Exam grading updated successfully!')
             return redirect('exam_grading_list')
     else:
         form = ExamGradingForm(instance=exam_grading)
-    return render(request, 'exam_gradings/exam_grading_form.html', {'form': form})
+    return render(request, 'exam_gradings/exam_grading_form.html', {'form': form, 'exam_grading': exam_grading})
 
 
 @login_required
@@ -856,6 +1060,7 @@ def exam_grading_delete(request, pk):
     exam_grading = get_object_or_404(ExamGrading, pk=pk)
     if request.method == 'POST':
         exam_grading.delete()
+        messages.success(request, 'Exam grading deleted successfully!')
         return redirect('exam_grading_list')
     return render(request, 'exam_gradings/exam_grading_confirm_delete.html', {'exam_grading': exam_grading})
 
@@ -875,26 +1080,28 @@ def question_detail(request, pk):
 @login_required
 def question_create(request):
     if request.method == 'POST':
-        form = QuestionForm(request.POST)
+        form = QuestionForm(request.POST, user=request.user)
         if form.is_valid():
             form.save()
+            messages.success(request, 'Question created successfully!')
             return redirect('question_list')
     else:
-        form = QuestionForm()
-    return render(request, 'questions/question_form.html', {'form': form})
+        form = QuestionForm(user=request.user)
+    return render(request, 'questions/question_create.html', {'form': form})
 
 
 @login_required
 def question_edit(request, pk):
     question = get_object_or_404(Question, pk=pk)
     if request.method == 'POST':
-        form = QuestionForm(request.POST, instance=question)
+        form = QuestionForm(request.POST, instance=question, user=request.user)
         if form.is_valid():
             form.save()
+            messages.success(request, 'Question updated successfully!')
             return redirect('question_list')
     else:
-        form = QuestionForm(instance=question)
-    return render(request, 'questions/question_form.html', {'form': form})
+        form = QuestionForm(instance=question, user=request.user)
+    return render(request, 'questions/question_edite.html', {'form': form})
 
 
 @login_required
@@ -902,6 +1109,7 @@ def question_delete(request, pk):
     question = get_object_or_404(Question, pk=pk)
     if request.method == 'POST':
         question.delete()
+        messages.success(request, 'Question deleted successfully!')
         return redirect('question_list')
     return render(request, 'questions/question_confirm_delete.html', {'question': question})
 
@@ -921,26 +1129,28 @@ def choice_detail(request, pk):
 @login_required
 def choice_create(request):
     if request.method == 'POST':
-        form = choiceForm(request.POST)
+        form = ChoiceForm(request.POST, user=request.user)
         if form.is_valid():
             form.save()
+            messages.success(request, 'Choice created successfully!')
             return redirect('choice_list')
     else:
-        form = choiceForm()
-    return render(request, 'choices/choice_form.html', {'form': form})
+        form = ChoiceForm(user=request.user)
+    return render(request, 'choices/choice_create.html', {'form': form})
 
 
 @login_required
 def choice_edit(request, pk):
     choice = get_object_or_404(Choice, pk=pk)
     if request.method == 'POST':
-        form = choiceForm(request.POST, instance=choice)
+        form = ChoiceForm(request.POST, instance=choice, user=request.user)
         if form.is_valid():
             form.save()
+            messages.success(request, 'Choice updated successfully!')
             return redirect('choice_list')
     else:
-        form = choiceForm(instance=choice)
-    return render(request, 'choices/choice_form.html', {'form': form})
+        form = ChoiceForm(instance=choice, user=request.user)
+    return render(request, 'choices/choice_create.html', {'form': form})
 
 
 @login_required
@@ -948,6 +1158,7 @@ def choice_delete(request, pk):
     choice = get_object_or_404(Choice, pk=pk)
     if request.method == 'POST':
         choice.delete()
+        messages.success(request, 'Choice deleted successfully!')
         return redirect('choice_list')
     return render(request, 'choices/choice_confirm_delete.html', {'choice': choice})
 
@@ -1095,22 +1306,54 @@ def discussion_list(request):
     return render(request, 'discussions/discussion_list.html', {'discussions': discussions})
 
 
+# @login_required
+# def discussion_detail(request, pk):
+#     discussion = get_object_or_404(Discussion, pk=pk)
+#     return render(request, 'discussions/discussion_detail.html', {'discussion': discussion})
+
 @login_required
 def discussion_detail(request, pk):
     discussion = get_object_or_404(Discussion, pk=pk)
-    return render(request, 'discussions/discussion_detail.html', {'discussion': discussion})
+    comments = discussion.comments.filter(parent__isnull=True)
+    new_comment = None
+
+    if request.method == 'POST':
+        comment_form = CommentForm(data=request.POST)
+        if comment_form.is_valid():
+            new_comment = comment_form.save(commit=False)
+            new_comment.discussion = discussion
+            new_comment.author = request.user
+            if 'parent' in request.POST:
+                parent_id = request.POST.get('parent')
+                new_comment.parent = Comment.objects.get(id=parent_id)
+            new_comment.save()
+            return redirect('discussion_detail', pk=discussion.pk)
+    else:
+        comment_form = CommentForm()
+
+    return render(request, 'discussions/discussion_detail.html', {
+        'discussion': discussion,
+        'comments': comments,
+        'new_comment': new_comment,
+        'comment_form': comment_form
+    })
 
 
 @login_required
-def discussion_create(request):
+def discussion_create(request, course_id):
+    course = get_object_or_404(Course, id=course_id)
     if request.method == 'POST':
         form = DiscussionForm(request.POST)
         if form.is_valid():
-            form.save()
-            return redirect('discussion_list')
+            discussion = form.save(commit=False)
+            discussion.course = course
+            discussion.starter = request.user
+            discussion.save()
+            return redirect('discussion_detail', pk=discussion.pk)
     else:
         form = DiscussionForm()
-    return render(request, 'discussions/discussion_form.html', {'form': form})
+    return render(request, 'discussions/discussion_create.html', {'form': form, 'course': course})
+   
 
 
 @login_required
@@ -1207,6 +1450,37 @@ def profile(request):
     else:
         messages.error(request, 'Profile does not exist!')
     return render(request, 'registration/profile.html')
+
+@login_required
+def profile_by_id(request, pk):
+    user = None
+    course_taught = []
+    professor_avatar = []
+    enrolled_courses = []
+    student_avatar = []
+
+    try:
+        # Try to get a professor first
+        user = Professor.objects.get(id=pk)
+        course_taught = Course.objects.filter(professors=user)
+        professor_avatar = Profile.objects.filter(user=user)
+    except Professor.DoesNotExist:
+        try:
+            # If not a professor, try to get a student
+            user = Student.objects.get(id=pk)
+            enrolled_courses = user.enrolled_student.all()
+            student_avatar = Profile.objects.filter(user=user)
+        except Student.DoesNotExist:
+            messages.error(request, 'Profile does not exist!')
+            return render(request, 'registration/profile_by_id.html')
+
+    return render(request, 'registration/profile_by_id.html', {
+        'user': user,
+        'course_taught': course_taught,
+        'professor_avatar': professor_avatar,
+        'enrolled_courses': enrolled_courses,
+        'student_avatar': student_avatar
+    })
 
 @login_required
 def profile_list(request):
@@ -1348,11 +1622,42 @@ def message_delete(request, pk):
 
 
 
-
 @login_required
 def student_list(request):
-    students = Student.objects.all()
-    return render(request, 'students/student_list.html', {'students': students})
+    user = request.user
+    
+    # Check if the user is an admin
+    if user.is_admin:
+        admin = get_object_or_404(Admin, id=user.id)
+        school = School.objects.get(admin_school=admin)
+        
+        # Get students enrolled in courses that belong to the admin's school
+        students = Student.objects.filter(enrolled_student__course__school=school).distinct()
+
+        # Retrieve profile pictures for students
+        student_avatars = {student.id: Profile.objects.filter(user=student).first() for student in students}
+
+        students_with_avatars = [
+                {
+                    'student': student,
+                    'telephone': student_avatars[student.id].telephone if student.id in student_avatars else 'N/A',
+                    'location': student_avatars[student.id].location if student.id in student_avatars else 'N/A'
+                }
+                for student in students
+            ]
+            
+        return render(request, 'students/student_list.html', {
+            'students_with_avatars': students_with_avatars
+        })
+        
+    elif user.is_superuser:
+        # Get all students
+        students = Student.objects.all()
+        student_avatars = {student.id: Profile.objects.filter(user=student).first() for student in students}
+        
+        return render(request, 'students/student_list.html', {'students': students, 'student_avatars': student_avatars})
+    else:
+        return redirect('home')  # Handle the case where the user is not an admin
 
 
 @login_required
@@ -1368,10 +1673,11 @@ def student_edit(request, pk):
         form = StudentForm(request.POST, instance=student)
         if form.is_valid():
             form.save()
+            messages.success(request, 'Student updated successfully!')
             return redirect('student_list')
     else:
         form = StudentForm(instance=student)
-    return render(request, 'students/student_form.html', {'form': form})
+    return render(request, 'students/student_edite.html', {'form': form})
 
 
 @login_required
@@ -1379,18 +1685,40 @@ def student_delete(request, pk):
     student = get_object_or_404(Student, pk=pk)
     if request.method == 'POST':
         student.delete()
+        messages.success(request, 'Student deleted successfully!')
         return redirect('student_list')
     return render(request, 'students/student_confirm_delete.html', {'student': student})
 
 
 
 
-
 @login_required
 def professor_list(request):
-    professors = Professor.objects.all()
-    return render(request, 'professors/professor_list.html', {'professors': professors})
-
+    user = request.user
+    
+    # Check if the user is a superuser
+    if user.is_superuser:
+        professors = Professor.objects.all()
+    else:
+        # Check if the user is an admin
+        admin = get_object_or_404(Admin, id=user.id)
+        school = School.objects.filter(admin_school=admin).first()  # Assuming one admin manages one school
+        professors = Professor.objects.filter(courses_taught__school=school).distinct()
+    
+    # Retrieve profile pictures for professors
+    professor_avatars = {professor.id: Profile.objects.filter(user=professor).first() for professor in professors}
+    professors_with_avatars = [
+            {
+                'professor': professor,
+                'telephone': professor_avatars[professor.id].telephone if professor.id in professor_avatars else 'N/A',
+                'location': professor_avatars[professor.id].location if professor.id in professor_avatars else 'N/A'
+            }
+            for professor in professors
+        ]
+        
+    return render(request, 'professors/professor_list.html', {
+        'professors_with_avatars': professors_with_avatars
+    })
 
 @login_required
 def professor_detail(request, pk):
@@ -1459,10 +1787,11 @@ def professor_edit(request, pk):
         form = ProfessorForm(request.POST, instance=professor)
         if form.is_valid():
             form.save()
+            messages.success(request, 'Professor updated successfully!')
             return redirect('professor_list')
     else:
         form = ProfessorForm(instance=professor)
-    return render(request, 'professors/professor_form.html', {'form': form})
+    return render(request, 'professors/professor_edite.html', {'form': form})
 
 
 @login_required
@@ -1470,6 +1799,7 @@ def professor_delete(request, pk):
     professor = get_object_or_404(Professor, pk=pk)
     if request.method == 'POST':
         professor.delete()
+        messages.success(request, 'Professor deleted successfully!')
         return redirect('professor_list')
     return render(request, 'professors/professor_confirm_delete.html', {'professor': professor})
 

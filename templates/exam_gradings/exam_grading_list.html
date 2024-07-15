@@ -1,0 +1,78 @@
+{% extends '../base.html' %}
+{% load crispy_forms_tags %}
+{% load class_name %}
+{% block title %}Exams{% endblock title %}
+{% block head %}
+    <!-- <style>
+        .list-group-item{
+            margin: 10px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+    </style> -->
+{% endblock head %}
+{% block content %}
+
+
+<nav style="--bs-breadcrumb-divider: '>';" aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+ 
+      <li class="breadcrumb-item active" aria-current="page">Exams Grades list</li>
+    </ol>
+</nav>
+
+{% if messages %}
+    {% for message in messages %}
+      {% if message.tags == 'error' %}
+          <div class="alert alert-danger" style="width: 50%;  margin: auto;">
+              {{ message }}
+          </div>
+      {%else %}
+          <div class="alert alert-{{ message.tags }}" style="width: 50%;  margin: auto;">
+              {{ message }}
+          </div>
+      {% endif %}
+    {% endfor %}
+{% endif %}
+
+<h2>Submitted Exams Grades </h2>
+
+
+<br>
+<hr>
+        <table class="table">
+          <thead>
+            <tr>
+              <th scope="col">Exam</th>
+              <th scope="col">Student</th>
+              <th scope="col">Submitted on</th>
+              <th scope="col">Graded</th>
+              <th scope="col">Grade</th>
+              <th scope="col">Feedback</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% if exam_gradings %}
+            {% for exam_grading in exam_gradings %}
+            <tr>
+              <td><a href="{% url 'exam_grading_detail' exam_grading.pk %}">{{ exam_grading.submission.exam.title }}</a></td>
+              <td>{{ exam_grading.student.username }}</td>
+              <td>{{ exam_grading.graded_at }}</td>
+              <td>{{ exam_grading.grader }}</td>
+              <td> <strong>{{ exam_grading.score }}</strong></td>
+              <td>{{ exam_grading.feedback|truncatewords:5 }}</td>
+            </tr>
+           {% endfor %}
+            {% else %}
+            <tr>
+              <td colspan="6">No Grades</td>
+            </tr>
+            {% endif %}
+          </tbody>
+        </table>
+
+        <button class="btn btn-success">Semester GPA: </button>
+
+{% endblock content %}

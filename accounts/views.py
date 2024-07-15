@@ -3,6 +3,7 @@ from django.views import  View
 from .forms import AdminSignupForm, StudentSignupForm, ProfessorSignupForm, UserLoginForm
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
+from udl_app.models import Admin, Student, Professor
 # Create your views here.
 
 
@@ -29,11 +30,11 @@ class AdminSingUpView(View):
 #Student signup view
 class StudentSingUpView(View):
     def get(self, request):
-        form = StudentSignupForm()
+        form = StudentSignupForm(user=request.user)
         return render(request, 'registration/student_signup.html',{'form':form})
     
     def post(self, request):
-        form = StudentSignupForm(request.POST, None)
+        form = StudentSignupForm(request.POST, None, user=request.user)
         if form.is_valid():
             user = form.save(commit=False)
             user.save()
@@ -47,11 +48,11 @@ class StudentSingUpView(View):
 #Professor signup view
 class ProfessorSingUpView(View):
     def get(self, request):
-        form = ProfessorSignupForm()
+        form = ProfessorSignupForm(user=request.user)
         return render(request, 'registration/professor_signup.html',{'form':form})
     
     def post(self, request):
-        form = ProfessorSignupForm(request.POST, None)
+        form = ProfessorSignupForm(request.POST, None, user=request.user)
         if form.is_valid():
             user = form.save(commit=False)
             user.save()
@@ -81,7 +82,7 @@ class UserLoginView(View):
             if user is not None:
                 login(request, user)
                 messages.success(request, 'Login successful.')
-                return redirect('home')
+                return redirect('dashboard')
             else:
                 messages.error(request, 'Invalid username or password.')
         except:

@@ -6,7 +6,7 @@
 
 <nav style="--bs-breadcrumb-divider: '>';" aria-label="breadcrumb">
     <ol class="breadcrumb">
-      <li class="breadcrumb-item"><a href="/">Home</a></li>
+      <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
       {% if user.is_student %}
       <li class="breadcrumb-item"><a href="{% url 'enrolled_course_list'  %}">Course list</a></li>
       <li class="breadcrumb-item"><a href="{% url 'student__course_lectures' lecture.course.pk %}">Lecture list</a></li>
@@ -43,25 +43,31 @@
         <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
       </div>
       {% if resource %}
-      {% for resource in lecture.resources.all %}
+
       <div class="offcanvas-body">
+      {% for resource in lecture.resources.all %}
         {% if resource.resource_file %}
-        <h2>Title: {{resource.title}}</h2>
         {% if resource.resource_file.url|endswith:".jpg" or resource.resource_file.url|endswith:".jpeg" or resource.resource_file.url|endswith:".png" %}
-        <ul class="list-group border border-success">
-          <li class="list-group-item border border-primary"><img src="{{ resource.resource_file.url }}" alt="{{ resource.title }}" style="max-width: 100%;" height="200px" ></li>
-          <li class="list-group-item border border-warning"><a href="{{ resource.resource_file.url }}" download><i class="fas fa-download"></i></a></li>
-        </ul>
-          {% elif resource.resource_file.url|endswith:".pdf" or resource.resource_file.url|endswith:".docx" %}
-              <ul class="list-group border border-success">
-                <li class="list-group-item border border-primary"><iframe src="{{ resource.resource_file.url }}" style="width:100%; height:300px;" ></iframe></li>
-                <li class="list-group-item border border-warning"><a href="{{ resource.resource_file.url }}" download><i class="fas fa-download"></i></a></li>
-              </ul>
+          <div class="d-flex justify-content-center" style="display: inline-block;">
+
+            <ul class="list-group border border-success " style="width: 8rem;  border: 2px solid black;" >
+              <li class="list-group-item border border-primary"><img src="{{ resource.resource_file.url }}" alt="{{ resource.title }}" style="max-width: 100%;" height="200px" ></li>
+              <li class="list-group-item border border-warning"><a href="{{ resource.resource_file.url }}" download><i class="fas fa-download"></i></a></li>
+              <br>
+            </ul>
+          </div>
+            <hr>
+            <br>
+            {% elif resource.resource_file.url|endswith:".pdf" or resource.resource_file.url|endswith:".docx" %}
+            <ul class="list-group border border-success">
+            <li class="list-group-item border border-primary"><iframe src="{{ resource.resource_file.url }}" style="width:100%; height:300px;" ></iframe></li>
+            <li class="list-group-item border border-warning"><a href="{{ resource.resource_file.url }}" download><i class="fas fa-download"></i></a></li>
+          </ul>
           {% elif resource.resource_file.url|endswith:".mp4" or resource.resource_file.url|endswith:".webm" %}
           
-              <video controls style="max-width: 100%;">
-                  <source src="{{ resource.resource_file.url }}" type="video/mp4">
-                  Your browser does not support the video tag.
+          <video controls style="max-width: 100%;">
+            <source src="{{ resource.resource_file.url }}" type="video/mp4">
+            Your browser does not support the video tag.
               </video>
               <ul class="list-group border border-success">
                 <li class="list-group-item border border-primary"><video controls style="max-width: 100%;">
@@ -70,18 +76,19 @@
               </video></li>
                 <li class="list-group-item border border-warning"><a href="{{ resource.resource_file.url }}" download><i class="fas fa-download"></i></a></li>
               </ul>
-          {% else %}
-          <ul class="list-group border border-success">
-            <li class="list-group-item border border-primary"><a href="{{ resource.resource_file.url }}">View File</a></li>
-            <li class="list-group-item border border-warning"><a href="{{ resource.resource_file.url }}" download><i class="fas fa-download"></i></a></li>
+              {% else %}
+              <ul class="list-group border border-success">
+                <li class="list-group-item border border-primary"><a href="{{ resource.resource_file.url }}">View File</a></li>
+                <li class="list-group-item border border-warning"><a href="{{ resource.resource_file.url }}" download><i class="fas fa-download"></i></a></li>
           </ul>
           {% endif %}
-    
-        {% else %}
+          
+          {% else %}
           <p>No file available</p>
-        {% endif %}
+          {% endif %}
+
+        {% endfor %}
       </div>
-      {% endfor %}
       {% else %}
       <div class="offcanvas-body">
         <p>No resources available</p>

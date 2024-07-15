@@ -1,0 +1,41 @@
+{% extends "../base.html" %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<ul class="list-group">
+    <li class="list-group-item active" aria-current="true">{{ discussion.title }}</li>
+    <li class="list-group-item"><strong>{{ discussion.message }}</strong></li>
+    <li class="list-group-item">Started by {{ discussion.starter.username }} on {{ discussion.created_at }}</li>
+    <li class="list-group-item"></li>
+    <li class="list-group-item">
+        <h2>Comments</h2>
+  <ul>
+    {% for comment in comments %}
+      <li>
+        <p>{{ comment.author.username }}: {{ comment.content }} on {{ comment.created_at }}</p>
+        <a href="#" onclick="document.getElementById('reply-form-{{ comment.id }}').style.display='block';">Reply</a>
+        <div id="reply-form-{{ comment.id }}" style="display:none;">
+          <form method="post" action="{% url 'discussion_detail' discussion.pk %}">
+            {% csrf_token %}
+            {{ comment_form | crispy}}
+            <input type="hidden" name="parent" value="{{ comment.id }}">
+            <button type="submit" class="btn btn-secondary">Post Reply</button>
+          </form>
+        </div>
+        {% include 'comments/comment_replies.html' with comment=comment %}
+      </li>
+    {% endfor %}
+  </ul>
+
+  <h3>Add a new comment</h3>
+  <form method="post" action="{% url 'discussion_detail' discussion.pk %}">
+    {% csrf_token %}
+    {{ comment_form | crispy }}
+    <button type="submit" class="btn btn-secondary">Post Comment</button>
+  </form>
+    </li>
+</ul>
+
+
+  
+{% endblock %}

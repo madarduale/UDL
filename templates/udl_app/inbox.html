@@ -1,19 +1,41 @@
 
 {% extends "../base.html" %}
 {% block content %}
+
+{% if messages %}
+{% for message in messages %}
+
+
+  <div class="alert alert-{{ message.tags }}">
+    {{ message }}
+  </div>
+{% endfor %}
+{% endif %}
+
+
+
+
 <h2>Inbox</h2>
 {% for message, url in message_urls %}
   <div>
-    <p>From: {{ message.sender }}</p>
-    <p>Subject: {{ message.subject }}</p>
-    <p>Content: {{ message.content }}</p>
-    <p><a target="_blank" href="{{ url }}">{{ url }}</a></p>
-    <p>Sent at: {{ message.timestamp }}</p>
+    <ul class="list-group">
+      <li class="list-group-item bg-sub-info">Message ID: {{ message.id }}</li>
+      <li class="list-group-item">Sender: {{ message.sender }}</li>
+      <li class="list-group-item">Subject: {{ message.subject }}</li>
+      <li class="list-group-item">Content: {{ message.content }}</li>
+      <li class="list-group-item">Sent at: {{ message.timestamp }}</li>
+      {% if url %}
+      <li class="list-group-item"><a href="{{ url }}" target="_blank" rel="noopener noreferrer">{{ url }}</a></li>
+      {% else %}
+      <li class="list-group-item">No URL</li>
+      {% endif %}
+    </ul>
   </div>
+  <h1></h1>
 {% empty %}
   <p>No messages</p>
 {% endfor %}
 
-<a class="btn btn-success" href="{% url 'home' %}">Back</a>
+<a class="btn btn-success" href="{% url 'dashboard' %}">Back</a>
 
 {% endblock content %}

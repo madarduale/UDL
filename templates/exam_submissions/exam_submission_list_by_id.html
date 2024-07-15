@@ -1,0 +1,113 @@
+{% extends '../base.html' %}
+{% load crispy_forms_tags %}
+{% block title %}examss{% endblock title %}
+
+{% block content %}
+
+
+<nav style="--bs-breadcrumb-divider: '>';" aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href=" {% url 'dashboard' %}">Dashboard</a></li>
+      <li class="breadcrumb-item"><a href=" {% url 'exam_submission_list' %}">exam submissions</a></li>
+ 
+      <li class="breadcrumb-item active" aria-current="page">Exams submissions</li>
+    </ol>
+</nav>
+
+{% if messages %}
+    {% for message in messages %}
+      {% if message.tags == 'error' %}
+          <div class="alert alert-danger" style="width: 50%;  margin: auto;">
+              {{ message }}
+          </div>
+      {%else %}
+          <div class="alert alert-{{ message.tags }}" style="width: 50%;  margin: auto;">
+              {{ message }}
+          </div>
+      {% endif %}
+    {% endfor %}
+{% endif %}
+
+{% if user.is_superuser %}
+<p> <a href="{% url 'exam_create'%}" class="btn btn-success">Exam create</a></p>
+{% endif %}
+
+
+<br>
+<hr>
+{% if not user.is_student %}
+<a href="{% url 'exam_grading_list' %}" class="btn btn-primary" style="left: 55rem; position: relative; bottom: 3.5rem;">Grades</a>
+{% endif %}
+
+{% if not user.is_student %}
+<h1 class="bg-primary " style="color: #ffff;">Exam Submissions for {{ exam.title }}</h1>
+
+<ul class="list-group">
+  {% for submission in submission_data %}
+  
+
+    
+  <li class="list-group-item">
+      <strong>Student: {{ submission.student }}</strong> <br>
+      <strong>Submitted at: {{ submission.submitted_at }}</strong>
+      <ul class="list-group mt-2">
+          {% for answer in submission.answers %}
+          <li class="list-group-item">
+              <strong>Question: {{ answer.question }}</strong> <br>
+              <strong>Marks: {{ answer.marks }}</strong> <br>
+              <strong>Your Answer: {{ answer.answer }}</strong> <br>
+              <strong>Correct Answer: {{ answer.correct_answer }}</strong> <br>
+              {% if answer.is_correct != 'N/A' %}
+              <strong>Is Correct: {{ answer.is_correct }}</strong> <br>
+              <strong>Marks Awarded: {{ answer.marks_awarded }}</strong>
+              {% else %}
+              <strong>Is Correct: Needs manual grading</strong> <br>
+              <strong>Marks Awarded: Needs manual grading</strong>
+              {% endif %}
+          </li>
+          {% endfor %}
+      </ul>
+  </li>
+  {% endfor %}
+</ul>
+{% if user.is_admin or user.is_professor %}
+<li class="list-group-item">
+  <!-- Button trigger modal -->
+<button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#exampleModal" style="width: 5rem;">
+  Mark
+</button>
+
+<!-- Modal -->
+<div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="exampleModalLabel">Grade Exam</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form method="POST" enctype="multipart/form-data">
+          {% csrf_token %}
+          {{ form | crispy }}
+            <a href="{% url 'exam_submission_list' %}" class="btn btn-secondary">Cancel</a>
+          <button type="submit" class="btn btn-primary">Submit</button>
+        </form>
+      </div>
+      <!-- <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-primary">Save changes</button>
+      </div> -->
+    </div>
+  </div>
+</div>
+<!-- <li class="list-group-item">Feedback: </li> -->
+</li>
+{% endif %}
+{% endif %}
+
+{% if user.is_student %}
+
+{% endif %}
+
+
+{% endblock content %}

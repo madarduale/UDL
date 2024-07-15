@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Professor Information</title>
+</head>
+<body>
+    <h1>Professor Information</h1>
+    <h2>{{ user.username }}</h2>
+    <p><strong>Full Name:</strong> {{ user.first_name }} {{ user.last_name }}</p>
+    <p><strong>Email:</strong> {{ user.email }}</p>
+    <h3>Profile</h3>
+    <p><strong>School:</strong> {{ profile.school }}</p>
+    <h3>Courses Taught</h3>
+    <ul>
+        {% for course in courses %}
+        <li>{{ course.title }} ({{ course.code }})</li>
+        {% endfor %}
+    </ul>
+</body>
+</html>

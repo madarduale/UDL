@@ -1,15 +1,20 @@
 from django import forms
+from django.utils import timezone
 from django.contrib.auth.forms import UserCreationForm, UserChangeForm
+
+from django.contrib.auth import get_user_model
+
+from django.db.models import Q
 from .models import(
-    Admin, Professor, Student, Course, Lecture, Grade,
+    BaseUser, Admin, Professor, Student, Course, Lecture, Grade,
     Assignment, AssignmentGrade, AssignmentSubmission,
-    Quiz, QuizGrading, QuizSubmission,
     Exam, ExamGrading, ExamSubmission,
     Question, Choice, Resource, EnrolledCourse,
     Discussion, Comment, Profile,
     School, Message, ZoomMeeting,
 ) 
 
+User = get_user_model()
 
 
 
@@ -36,6 +41,11 @@ class AdminForm(forms.ModelForm):
 
     
 class ProfessorForm(forms.ModelForm):
+    courses = forms.ModelMultipleChoiceField(
+    queryset=Course.objects.none(),  # Start with an empty queryset
+    required=False,
+    widget=forms.CheckboxSelectMultiple  # Use a checkbox widget for multiple selection
+    )
     class Meta:
         model = Professor
         fields = ['username', 'first_name', 'last_name', 'email', 'is_professor',  'school']
@@ -44,9 +54,11 @@ class ProfessorForm(forms.ModelForm):
         user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
         if user is not None:
-            professeor = Professor.objects.get(username=user)
-            for school in professeor.school.all():
-                self.fields['school'].queryset = School.objects.filter(name=school)
+            professor = Professor.objects.get(username=user)
+            # for school in professeor.school.all():
+            #     self.fields['school'].queryset = School.objects.filter(name=school)
+            self.fields['school'].queryset = professor.school.all()  # Filter schools for the professor
+            self.fields['courses'].queryset = Course.objects.filter(professors=professor)  # Filter courses for the professor
 
 
 class StudentForm(forms.ModelForm):
@@ -67,11 +79,52 @@ class SchoolForm(forms.ModelForm):
         model = School
         fields = ['name']
 
+
+
 class MessageForm(forms.ModelForm):
+    recipients = forms.ModelMultipleChoiceField(queryset=User.objects.none(), widget=forms.CheckboxSelectMultiple)
+
     class Meta:
         model = Message
-        fields = ['recipient', 'subject', 'content', 'url']
+        fields = ['recipients', 'subject', 'content', 'url']
 
+    def __init__(self, *args, **kwargs):
+        request = kwargs.pop('request', None)
+        super(MessageForm, self).__init__(*args, **kwargs)
+        
+        if request:
+            if request.user.is_admin:
+                admin = Admin.objects.get(id=request.user.id)
+                school = admin.school.first()  
+                if school:
+                    self.fields['recipients'].queryset = User.objects.filter(student__school=school) | \
+                                                        User.objects.filter(professor__school=school)
+                else:
+                    self.fields['recipients'].queryset = User.objects.none()
+            
+            elif request.user.is_professor:
+                professor = Professor.objects.get(id=request.user.id)
+                courses_taught = professor.courses_taught.all()
+                self.fields['recipients'].queryset = Student.objects.filter(enrolled_student__course__in=courses_taught).distinct()
+            
+            elif request.user.is_student:
+                student = Student.objects.get(id=request.user.id)
+                courses = student.enrolled_student.all()
+                school = student.school.first() 
+                schools = student.school.all() 
+                enrolled_courses = EnrolledCourse.objects.filter(student=student)
+                courses = Course.objects.filter(enrolled_course__in=enrolled_courses)
+                professors = Professor.objects.filter(courses_taught__in=courses)
+                admins = Admin.objects.filter(school__in=schools)
+                self.fields['recipients'].queryset = BaseUser.objects.filter(Q(professor__in=professors) | Q(admin__in=admins))
+                # courses = Course.objects.filter(enrolled_course=enrolled_courses.first())
+                # if school:
+                #     for course in courses:
+                #         self.fields['recipients'].queryset = Professor.objects.filter(courses_taught=course).union(Admin.objects.filter(school=school))
+                #     # self.fields['recipients'].queryset = Professor.objects.filter(courses_taught__in=course) | \
+                #     #                                     Admin.objects.filter(admin__school=school)
+                # else:
+                #     self.fields['recipients'].queryset = User.objects.none()
 
 class CourseForm(forms.ModelForm):
     class Meta:
@@ -140,50 +193,175 @@ class AssignmentSubmissionForm(forms.ModelForm):
         model = AssignmentSubmission
         fields = ['assignment', 'student', 'file']
 
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+        if user is not None:
+            if user.is_student:
+                enrolled_courses = EnrolledCourse.objects.filter(student=user)
+                assignments = Assignment.objects.filter(course__in=enrolled_courses.values_list('course', flat=True))
+                valid_assignments = []
+                for assignment in assignments:
+                    if assignment.due_date >= timezone.now():
+                        valid_assignments.append(assignment)
+                self.fields['assignment'].queryset = Assignment.objects.filter(id__in=[assignment.id for assignment in valid_assignments])
+                self.fields['student'].queryset = Student.objects.filter(username=user)
+            elif user.is_professor:
+                self.fields['assignment'].queryset = Assignment.objects.filter(course__professors=user) 
+                courses_taught = Course.objects.filter(professors=user)
+                enrolled_students = Student.objects.filter(enrolled_student__course__in=courses_taught).distinct()
+                self.fields['student'].queryset = enrolled_students
+            elif user.is_admin:
+                admin = Admin.objects.get(username=user)
+                for school in admin.school.all():
+                    self.fields['assignment'].queryset = Assignment.objects.filter(course__school=school)
+                    self.fields['student'].queryset = Student.objects.filter(school=school)
+            elif user.is_superuser:
+                self.fields['assignment'].queryset = Assignment.objects.all()
+        self.fields['file'].required = False
+
 class AssigmmentGradeForm(forms.ModelForm):
     class Meta:
         model = AssignmentGrade
-        fields = ['student', 'score','grader', 'feedback', 'assignment']
+        fields = ['student', 'score','grader', 'feedback', 'assignment_solution']
+
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+        if user is not None:
+            if user.is_professor:
+                course = Course.objects.filter(professors=user)
+                self.fields['assignment_solution'].queryset = AssignmentSubmission.objects.filter(assignment__course__in=course)
+                course = Course.objects.filter(professors=user)
+                self.fields['student'].queryset = Student.objects.filter(enrolled_student__course__in=course).distinct()
+                self.fields['grader'].queryset = Professor.objects.filter(username=user)
+            elif user.is_admin:
+                admin = Admin.objects.get(username=user)
+                for school in admin.school.all():
+                    self.fields['assignment_solution'].queryset = AssignmentSubmission.objects.filter(assignment__course__school=school)
+                    self.fields['student'].queryset = Student.objects.filter(school=school)
+                    self.fields['grader'].queryset = Professor.objects.filter(school=school)
+            elif user.is_superuser:
+                self.fields['assignment_solution'].queryset = Assignment.objects.all()
 
 class QuestionForm(forms.ModelForm):
     class Meta:
         model = Question
-        fields = ['text', 'question_type']
+        fields = ['course', 'question', 'marks', 'question_type']
 
-class QuizForm(forms.ModelForm):
-    class Meta:
-        model = Quiz
-        fields = ['course', 'title', 'description', 'start_time', 'end_time', 'questions']
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+        if user is not None:
+            if user.is_professor:
+                self.fields['course'].queryset = Course.objects.filter(professors=user)
+            elif user.is_admin:
+                admin = Admin.objects.get(username=user)
+                for school in admin.school.all():
+                    self.fields['course'].queryset = Course.objects.filter(school=school)
+            elif user.is_superuser:
+                self.fields['course'].queryset = Course.objects.all()
 
-class QuizSubmissionForm(forms.ModelForm):
-    class Meta:
-        model = QuizSubmission
-        fields = ['quiz', 'student','answers']
-
-class QuizGradingForm(forms.ModelForm):
-    class Meta:
-        model = QuizGrading
-        fields = ['student', 'score','grader','feedback','submission']
 class ExamForm(forms.ModelForm):
     class Meta:
         model = Exam
-        fields = ['course', 'title', 'description', 'start_time', 'end_time', 'questions']
+        fields = ['course', 'title', 'start_time', 'end_time', 'description', 'exam_type',  'questions']
+        widgets = {
+                'start_time': forms.DateTimeInput(attrs={'class': 'datetimepicker'}),
+                'end_time': forms.DateTimeInput(attrs={'class': 'datetimepicker'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+        if user is not None:
+            if user.is_professor:
+                self.fields['course'].queryset = Course.objects.filter(professors=user)
+                self.fields['questions'].queryset = Question.objects.filter(course__professors=user)
+            elif user.is_admin:
+                admin = Admin.objects.get(username=user)
+                for school in admin.school.all():
+                    self.fields['course'].queryset = Course.objects.filter(school=school)
+                    self.fields['questions'].queryset = Question.objects.filter(course__school=school)
+            elif user.is_superuser:
+                self.fields['course'].queryset = Course.objects.all()
 
 class ExamSubmissionForm(forms.ModelForm):
     class Meta:
         model = ExamSubmission
         fields = ['exam', 'student','answers']
+    
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+        if user is not None:
+            if user.is_student:
+                enrolled_courses = EnrolledCourse.objects.filter(student=user)
+                exams = Exam.objects.filter(course__in=enrolled_courses.values_list('course', flat=True))
+                valid_exams = []
+                for exam in exams:
+                    if exam.end_time >= timezone.now():
+                        valid_exams.append(exam)
+                self.fields['exam'].queryset = Exam.objects.filter(id__in=[exam.id for exam in valid_exams])
+                self.fields['student'].queryset = Student.objects.filter(username=user)
+            elif user.is_professor:
+                self.fields['exam'].queryset = Exam.objects.filter(course__professors=user) 
+                courses_taught = Course.objects.filter(professors=user)
+                enrolled_students = Student.objects.filter(enrolled_student__course__in=courses_taught).distinct()
+                self.fields['student'].queryset = enrolled_students
+            elif user.is_admin:
+                admin = Admin.objects.get(username=user)
+                for school in admin.school.all():
+                    self.fields['exam'].queryset = Exam.objects.filter(course__school=school)
+                    self.fields['student'].queryset = Student.objects.filter(school=school)
+            elif user.is_superuser:
+                self.fields['exam'].queryset = Exam.objects.all()
 
 class ExamGradingForm(forms.ModelForm):
     class Meta:
         model = ExamGrading
         fields = ['student', 'score','grader','feedback','submission']
 
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+        if user is not None:
+            if user.is_professor:
+                course = Course.objects.filter(professors=user)
+                self.fields['submission'].queryset = ExamSubmission.objects.filter(exam__course__in=course)
+                course = Course.objects.filter(professors=user)
+                self.fields['student'].queryset = Student.objects.filter(enrolled_student__course__in=course).distinct()
+                self.fields['grader'].queryset = Professor.objects.filter(username=user)
+            elif user.is_admin:
+                admin = Admin.objects.get(username=user)
+                for school in admin.school.all():
+                    self.fields['submission'].queryset = ExamSubmission.objects.filter(exam__course__school=school)
+                    self.fields['student'].queryset = Student.objects.filter(school=school)
+                    self.fields['grader'].queryset = Professor.objects.filter(school=school)
+            elif user.is_superuser:
+                self.fields['submission'].queryset = Exam.objects.all()
 
-class choiceForm(forms.ModelForm):
+
+class ChoiceForm(forms.ModelForm):
     class Meta:
         model = Choice
-        fields = ['question', 'text', 'is_correct']
+        fields = ['question', 'choice', 'correct_choice']
+
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user', None)
+        question = kwargs.pop('question', None)
+        super().__init__(*args, **kwargs)
+        if user is not None:
+            if user.is_professor:
+                self.fields['question'].queryset = Question.objects.filter(course__professors=user)
+            elif user.is_admin:
+                admin = Admin.objects.get(username=user)
+                for school in admin.school.all():
+                    self.fields['question'].queryset = Question.objects.filter(course__school=school)
+            elif user.is_superuser:
+                self.fields['question'].queryset = Question.objects.all()
+        if question is not None:
+            self.fields['question'].queryset = Question.objects.filter(id=question.id)
 
 class ResourceForm(forms.ModelForm):
     class Meta:
@@ -212,12 +390,12 @@ class EnrolledCourseForm(forms.ModelForm):
 class DiscussionForm(forms.ModelForm):
     class Meta:
         model = Discussion
-        fields = ['course', 'title', 'starter', 'message']
+        fields = [ 'title', 'message']
 
 class CommentForm(forms.ModelForm):
     class Meta:
         model = Comment
-        fields = ['discussion', 'parent', 'author', 'content', 'likes']
+        fields = ['content']
 
 class ZoomMeetingForm(forms.ModelForm):
     class Meta:

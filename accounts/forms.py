@@ -3,6 +3,7 @@ from django.contrib.auth.forms import UserCreationForm, UserChangeForm
 from udl_app.models import Admin, Student, Professor, BaseUser
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Submit, Row, Column
+from udl_app.models import School
 
 # class LoginForm(forms.Form):
     
@@ -59,6 +60,7 @@ class StudentSignupForm(UserCreationForm):
 
         ]
     def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
         self.fields['username'].help_text = ''  
         self.fields['email'].help_text = '' 
@@ -68,6 +70,12 @@ class StudentSignupForm(UserCreationForm):
         self.fields['password2'].help_text = '' 
         self.fields['is_student'].help_text = '' 
         self.fields['is_active'].help_text = '' 
+
+        if user.is_superuser:
+            self.fields['school'].queryset = School.objects.all()
+        elif user.is_admin:
+            admin = Admin.objects.get(username=user)
+            self.fields['school'].queryset = School.objects.filter(admin_school=admin)
 
 
 class StudentEditForm(UserChangeForm):
@@ -84,6 +92,22 @@ class StudentEditForm(UserChangeForm):
             "is_active",
         ]
 
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+        self.fields['username'].help_text = ''  
+        self.fields['email'].help_text = '' 
+        self.fields['school'].help_text = '' 
+        self.fields['UID'].help_text = '' 
+        self.fields['is_student'].help_text = '' 
+        self.fields['is_active'].help_text = '' 
+
+        if user.is_superuser:
+            self.fields['school'].queryset = School.objects.all()
+        elif user.is_admin:
+            admin = Admin.objects.get(username=user)
+            self.fields['school'].queryset = School.objects.filter(admin_school=admin)
+
 class ProfessorSignupForm(UserCreationForm):
     class Meta:
         model=Professor
@@ -97,6 +121,7 @@ class ProfessorSignupForm(UserCreationForm):
             "is_active",
         ]
     def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
         self.fields['username'].help_text = ''  
         self.fields['email'].help_text = '' 
@@ -105,6 +130,13 @@ class ProfessorSignupForm(UserCreationForm):
         self.fields['password2'].help_text = '' 
         self.fields['is_active'].help_text = ''
         self.fields['is_professor'].help_text = ''
+
+        if user.is_superuser:
+            self.fields['school'].queryset = School.objects.all()
+        elif user.is_admin:
+            admin = Admin.objects.get(username=user)
+            self.fields['school'].queryset = School.objects.filter(admin_school=admin)
+        
 
 class ProfessorEditForm(UserChangeForm):
     class Meta:
@@ -118,6 +150,21 @@ class ProfessorEditForm(UserChangeForm):
             "is_professor",
             "is_active",
         ]
+
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+        self.fields['username'].help_text = ''  
+        self.fields['email'].help_text = '' 
+        self.fields['school'].help_text = '' 
+        self.fields['is_professor'].help_text = '' 
+        self.fields['is_active'].help_text = '' 
+
+        if user.is_superuser:
+            self.fields['school'].queryset = School.objects.all()
+        elif user.is_admin:
+            admin = Admin.objects.get(username=user)
+            self.fields['school'].queryset = School.objects.filter(admin_school=admin)
 
 
 class UserLoginForm(forms.Form):

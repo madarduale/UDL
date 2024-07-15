@@ -1,0 +1,262 @@
+{% extends '../base.html' %}
+{% load crispy_forms_tags %}
+{% block title %}Exams{% endblock title %}
+{% block head %}
+    <!-- <style>
+        .list-group-item{
+            margin: 10px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+    </style> -->
+{% endblock head %}
+{% block content %}
+
+
+<nav style="--bs-breadcrumb-divider: '>';" aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href=" {% url 'dashboard' %}">Dashboard</a></li>
+        <l class="breadcrumb-item" ><a href="{% url 'exam_list' %}">Exams List</a></l>
+      <li class="breadcrumb-item active" aria-current="page">Exam detail</li>
+    </ol>
+</nav>
+
+{% if messages %}
+    {% for message in messages %}
+      {% if message.tags == 'error' %}
+          <div class="alert alert-danger" style="width: 50%;  margin: auto;">
+              {{ message }}
+          </div>
+      {%else %}
+          <div class="alert alert-{{ message.tags }}" style="width: 50%;  margin: auto;">
+              {{ message }}
+          </div>
+      {% endif %}
+    {% endfor %}
+{% endif %}
+
+<h2>Exam Detail</h2>
+
+{% if user.is_superuser %}
+<p> <a href="{% url 'exam_edit' exam.pk %}" class="btn btn-primary">Exam Edite</a></p>
+{% endif %}
+
+{% if user.is_professor or user.is_admin %}
+
+ <a href="{% url 'question_list' %}" class="btn btn-primary">Questions</a>
+<a href="{% url 'choice_list' %}" class="btn btn-primary">Choices</a>
+<a href="{% url 'exam_submission_list_by_id' exam.pk %}" class="btn btn-primary" style="left: 43rem; position: relative;">submitted Exam</a>
+
+{% endif %}
+
+<br>
+<hr>
+
+{% if not user.is_student %}
+<ul class="list-group">
+    
+            {% if exam.end_time < current_time %}
+            <li class="list-group-item" style="background-color: #f8d7da;">Exam Title: {{ exam.title }}</li>
+            {% else %}
+            <li class="list-group-item active">Exam Title: {{ exam.title }}</li>
+            {% endif %}
+  
+            <li class="list-group-item">Description: {{exam.description}}</li>
+            <li class="list-group-item">Course: {{exam.course.title}}</li>
+            <li class="list-group-item">Course: {{exam.exam_type}}</li>
+            <li class="list-group-item">Start Time: {{exam.start_time}}</li>
+            <li class="list-group-item">End Time: {{exam.end_time}}</li>
+            {% for question in exam.questions.all %}
+            <li class="list-group-item">Question: {{question.question}}</li>
+            {% for choice in question.choices.all %}
+            <li class="list-group-item">Choice: {{choice.choice}}</li>
+            <l class="list-group-item">Correct Answer: {{choice.correct_choice}}</l>
+            {% endfor %}
+            {% endfor %}
+            {% if user.is_admin or user.is_professor %}
+            <li class="list-group-item">
+                <!-- Button trigger modal -->
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#exampleModal">
+                <i class="fa fa-pencil-square-o" aria-hidden="true"></i>
+            </button>
+            
+            <!-- Modal -->
+            <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLabel">Edite exam</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                    <form method="POST" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        {{ form | crispy }}
+                        <a href="{% url 'exam_detail' exam.pk %}" class="btn btn-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-primary">Submit</button>
+                    </form>
+                    </div>
+                    <!-- <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary">Save changes</button>
+                    </div> -->
+                </div>
+                </div>
+            </div>
+            <a href="{% url 'exam_delete' exam.pk %}" class="btn btn-danger"><i class="fa fa-trash-o"></i></a>
+            </li>
+            {% endif %}
+            <br>
+            <br>
+            <hr>
+            <br>    
+            <br>
+        </ul>
+{% endif %}
+{% if user.is_student %}
+    <div id="exam-container">
+        <button class="btn btn-primary">
+            <div id="countdown-timer"></div>
+        </button>
+        <hr>
+        <ul class="list-group">
+            {% if exam.end_time < current_time %}
+            <li class="list-group-item" style="background-color: #f8d7da;">Exam Title: {{ exam.title }}</li>
+            {% else %}  
+            <li class="list-group-item active">Exam Title: {{ exam.title }}</li>
+            {% endif %}
+            <li class="list-group-item">Description: {{exam.description}}</li>
+            <li class="list-group-item">Course: {{exam.course.title}}</li>
+            <li class="list-group-item">Course: {{exam.exam_type}}</li>
+            <li class="list-group-item">Start Time: {{exam.start_time}}</li>
+            <li class="list-group-item">End Time: {{exam.end_time}}</li>
+
+            {% if exam.start_time <= current_time and exam.end_time >= current_time %}
+            <form id="exam-form" method="post" action="{% url 'exam_submission_create_by_id' exam.pk %}">
+                {% csrf_token %}
+                {% for type, questions in group_questions_by_type.items %}
+                {% if type == 'MCQ' %}
+                <h2>Multiple Choice Question</h2>
+                {% for question in questions %}
+                <li class="list-group-item">
+                    <strong>Question: {{ question.question }}</strong>
+                    <div style="position: relative; left: 50rem; width: 10vw; bottom: 1.5rem;" >
+                        <span>{{question.marks}} Marks</span>
+                    </div>
+                    {% for choice in question.choices.all %}
+                    <div>
+                        <input type="radio" id="choice_{{ choice.id }}" name="question{{ question.id }}" value="{{choice.id}}">
+                        <label for="choice_{{ choice.id }}">{{ choice.choice }}</label>
+                    </div>
+                    {% endfor %}
+                </li>
+                {% endfor %}
+                {% elif type == 'TF' %}
+                <h2>True and False Question</h2>
+                {% for question in questions %}
+                <li class="list-group-item">
+                    <strong>Question: {{ question.question }}</strong>
+                    <div style="position: relative; left: 50rem; width: 10vw; bottom: 1.5rem;">
+                        <span>{{question.marks}} Marks</span>
+                    </div>
+                    {% for choice in question.choices.all %}
+                    <div>
+                        <input type="radio" id="choice_{{ choice.id }}" name="question{{ question.id }}" value="{{choice.id}}">
+                        <label for="choice_{{ choice.id }}">{{ choice.choice }}</label>
+                    </div>
+                    {% endfor %}
+                </li>
+                {% endfor %}
+                {% elif type == 'SA' %}
+                <h2>Short Answer Question</h2>
+                {% for question in questions %}
+                <li class="list-group-item">
+                    <strong>Question: {{ question.question }}</strong>
+                    <div style="position: relative; left: 50rem; width: 10vw; bottom: 1.5rem;">
+                        <span>{{question.marks}} Marks</span>
+                    </div>
+                    <div>
+                        <input type="text" id="answer_{{ question.id }}" name="question{{ question.id }}">
+                    </div>
+                </li>
+                {% endfor %}
+                {% elif type == 'LA' %}
+                <h2>Long Answer Question</h2>
+                {% for question in questions %}
+                <li class="list-group-item">
+                    <strong>Question: {{ question.question }}</strong>
+                    <div style="position: relative; left: 50rem; width: 10vw; bottom: 1.5rem;">
+                        <span>{{question.marks}} Marks</span>
+                    </div>
+                    <div>
+                        <textarea id="answer_{{ question.id }}" name="question{{ question.id }}" rows="5"></textarea>
+                    </div>
+                </li>
+                {% endfor %}
+                {% else %}
+                <li class="list-group-item">
+                    <p>No Questions</p>
+                </li>
+                {% endif %}
+                {% endfor %}
+                <li class="list-group-item">
+                    <button type="submit" class="btn btn-primary">Submit</button>
+                </li>
+            </form>
+
+            <div id="countdown-timer" style="position: fixed; top: 10px; right: 10px;"></div>
+            {% endif %}
+        </ul>
+    </div>
+
+    <script>
+        // Countdown Timer
+        const endTime = new Date("{{ exam.end_time|date:'Y-m-d H:i:s' }}").getTime();
+        const countdownTimer = document.getElementById('countdown-timer');
+
+        const updateTimer = setInterval(function() {
+            const now = new Date().getTime();
+            const remainingTime = endTime - now;
+
+            if (remainingTime < 0) {
+                clearInterval(updateTimer);
+                document.getElementById('exam-form').submit();
+                return;
+            }
+
+            const hours = Math.floor((remainingTime % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((remainingTime % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((remainingTime % (1000 * 60)) / 1000);
+
+            countdownTimer.innerHTML = `Remaining Time: ${hours}h ${minutes}m ${seconds}s`;
+        }, 1000);
+
+        // Access Camera and Prevent Exam Entry if Camera is Not Opened
+        async function enableCamera() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                const video = document.createElement('video');
+                video.srcObject = stream;
+                video.play();
+                document.body.appendChild(video);
+            } catch (err) {
+                alert('Camera access is required to start the exam.');
+                window.location.href = '{% url "dashboard" %}';  // Redirect to home or any other appropriate page
+            }
+        }
+
+        enableCamera();
+
+        // Prevent Tab Switching and Auto Submit Exam Form
+        document.addEventListener('visibilitychange', function() {
+            if (document.hidden) {
+                alert("You have switched tabs. The exam form will be submitted.");
+                document.getElementById('exam-form').submit();
+            }
+        });
+    </script>
+{% endif %}
+
+
+{% endblock content %}

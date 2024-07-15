@@ -6,7 +6,7 @@
 
 <nav style="--bs-breadcrumb-divider: '>';" aria-label="breadcrumb">
     <ol class="breadcrumb">
-      <li class="breadcrumb-item"><a href="/">Home</a></li>
+      <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
       {% if user.is_student %}
       <li class="breadcrumb-item"><a href="{% url 'enrolled_course_list'  %}">Course list</a></li>
       {% else %}

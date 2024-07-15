@@ -16,7 +16,7 @@
 
 <nav style="--bs-breadcrumb-divider: '>';" aria-label="breadcrumb">
     <ol class="breadcrumb">
-      <li class="breadcrumb-item"><a href="/">Home</a></li>
+      <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
         <l class="breadcrumb-item" ><a href="{% url 'assignment_list' %}">Assignments</a></l>
       <li class="breadcrumb-item active" aria-current="page">Assignment detail</li>
     </ol>
@@ -64,7 +64,7 @@
             <li class="list-group-item">
                 <!-- Button trigger modal -->
             <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#exampleModal">
-                <i class="fa fa-plus" aria-hidden="true"></i>
+                <i class="fa fa-pencil-square-o" aria-hidden="true"></i>
             </button>
             
             <!-- Modal -->
@@ -90,7 +90,7 @@
                 </div>
                 </div>
             </div>
-            <a href="{% url 'assignment_delete' assignment.pk %}" class="btn btn-danger"><i class="fas fa-trash"></i></a>
+            <a href="{% url 'assignment_delete' assignment.pk %}" class="btn btn-danger"><i class="fa fa-trash-o"></i></a>
             </li>
             {% endif %}
             <br>

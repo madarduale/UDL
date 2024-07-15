@@ -16,7 +16,7 @@
 
 <nav style="--bs-breadcrumb-divider: '>';" aria-label="breadcrumb">
     <ol class="breadcrumb">
-      <li class="breadcrumb-item"><a href="/">Home</a></li>
+      <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
  
       <li class="breadcrumb-item active" aria-current="page">Assignments</li>
     </ol>
@@ -70,13 +70,42 @@
     </div>
   </div>
 </div>
+<a href="{% url 'assignment_submission_list' %}" class="btn btn-primary" style="left: 48rem; position: relative;">submitted assignments</a>
 {% endif %}
 {% if user.is_superuser %}
 <p> <a href="{% url 'assignment_create'%}" class="btn btn-success">assignment create</a></p>
 {% endif %}
 {% if user.is_student %}
-<p> <a href="{% url 'assignment_submission_create'%}" class="btn btn-success">Submit assignment</a></p>
+<!-- Button trigger modal -->
+<button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#exampleModal">
+  submit assignment
+</button>
+
+<!-- Modal -->
+<div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="exampleModalLabel">Submit Assignment</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form method="POST" enctype="multipart/form-data">
+          {% csrf_token %}
+          {{ form2 | crispy }}
+            <a href="{% url 'assignment_list' %}" class="btn btn-secondary">Cancel</a>
+          <button type="submit" class="btn btn-primary">Submit</button>
+        </form>
+      </div>
+      <!-- <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-primary">Save changes</button>
+      </div> -->
+    </div>
+  </div>
+</div>
 {% endif %}
+
 <br>
 <hr>
 
@@ -84,10 +113,14 @@
     {% if assignments %}
           {% for assignment in assignments %}
             {% if user.is_student %}
-            <li class="list-group-item active">Assignments Title: {{assignment.title}}</li>
+            {% if assignment.due_date < current_time %}
+            <li class="list-group-item" style="background-color: #e71e2f;">Assignments Title: {{ assignment.title }}(overdue)</li>
             {% else %}
-            {% if assignment.due_date < today %}
-            <li class="list-group-item" style="background-color: #f8d7da;">Assignments Title: <a href="{% url 'assignment_detail' assignment.pk %}"  style="color: #721c24;">{{ assignment.title }}<i class="fa fa-info-circle m-2" aria-hidden="true"></i></a></li>
+            <li class="list-group-item active">Assignments Title: {{assignment.title}}</li>
+            {% endif %}
+            {% else %}
+            {% if assignment.due_date < current_time %}
+            <li class="list-group-item" style="background-color: #e71e2f;">Assignments Title: <a href="{% url 'assignment_detail' assignment.pk %}"  style="color: #721c24;">{{ assignment.title }}<i class="fa fa-info-circle m-2" aria-hidden="true"></i>(overdue)</a></li>
             {% else %}
             <li class="list-group-item active">Assignments Title: <a href="{% url 'assignment_detail' assignment.pk %}"  style="color: #ffff;">{{ assignment.title }}<i class="fa fa-info-circle m-2" aria-hidden="true"></i></a></li>
             {% endif %}
@@ -95,8 +128,12 @@
             <li class="list-group-item">description: {{assignment.description}}</li>
             <li class="list-group-item">Course: {{assignment.course.title}}</li>
             <li class="list-group-item">due date: {{assignment.due_date}}</li>
+            {% if assignment.due_date > current_time %}
             {% if assignment.file %}
             <li class="list-group-item">file: <a href="{{assignment.file.url}}" download><i class="fas fa-download"></i></a></li>
+            {% else %}
+            <li class="list-group-item">file: no file</li>
+            {% endif %}
             {% else %}
             <li class="list-group-item">file: no file</li>
             {% endif %}

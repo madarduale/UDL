@@ -1,0 +1,52 @@
+{% extends '../base.html' %}
+{% load crispy_forms_tags %}
+{% block title %}examss{% endblock title %}
+
+{% block content %}
+
+
+<nav style="--bs-breadcrumb-divider: '>';" aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href=" {% url 'dashboard' %}">Dashboard</a></li>
+ 
+      <li class="breadcrumb-item active" aria-current="page">Exams submissions</li>
+    </ol>
+</nav>
+
+{% if messages %}
+    {% for message in messages %}
+      {% if message.tags == 'error' %}
+          <div class="alert alert-danger" style="width: 50%;  margin: auto;">
+              {{ message }}
+          </div>
+      {%else %}
+          <div class="alert alert-{{ message.tags }}" style="width: 50%;  margin: auto;">
+              {{ message }}
+          </div>
+      {% endif %}
+    {% endfor %}
+{% endif %}
+
+
+
+{% if not user.is_student %}
+<h2>Exam Submissions</h2>
+{% for submission in exam_submissions %}
+    <div class="card" style="width: 18rem;">
+        <div class="card-body">
+            <h5 class="card-title">{{ submission.student }}</h5>
+            <h6 class="card-subtitle mb-2 text-muted">{{ submission.exam }}</h6>
+            <p class="card-text">{{ submission.submission_date }}</p>
+            <a href="{% url 'exam_submission_list_by_id' submission.exam.id %}" class="card-link">View</a>
+        </div>
+    </div>
+{% endfor %}
+{% else %}
+{% endif %}
+
+{% if user.is_student %}
+
+{% endif %}
+
+
+{% endblock content %}

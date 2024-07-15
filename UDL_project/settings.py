@@ -54,15 +54,27 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     "crispy_forms",
     "crispy_bootstrap5",
+    'channels',
     'udl_app',
     'accounts',
     'sass_processor',
     'embed_video',
 ]
 
+ASGI_APPLICATION = 'UDL_project.asgi.application'
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            "hosts": [('127.0.0.1', 6379)],
+        },
+    },
+}
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'django_session_timeout.middleware.SessionTimeoutMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -83,6 +95,11 @@ LOGOUT_REDIRECT_URL = "/"
 CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
 CRISPY_TEMPLATE_PACK = "bootstrap5"
 
+SESSION_EXPIRE_SECONDS = 600
+SESSION_EXPIRE_AFTER_LAST_ACTIVITY = True
+# SESSION_EXPIRE_AFTER_LAST_ACTIVITY_GRACE_PERIOD = 60
+SESSION_TIMEOUT_REDIRECT = 'dashboard'
+SESSION_EXPIRE_AT_BROWSER_CLOSE=True
 # settings.py
 JWT_PRIVATE_KEY = '''-----BEGIN PRIVATE KEY-----
 MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQCM8O1Hubk+rib3

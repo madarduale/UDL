@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Live Video Call - Professor/Admin</title>
+</head>
+<body>
+    <h1>Live Video Call</h1>
+    <video id="remoteVideo" autoplay playsinline></video>
+
+    <script>
+        const remoteVideo = document.getElementById('remoteVideo');
+        const ws = new WebSocket('ws://' + window.location.host + '/ws/video-call/');
+
+        const peerConnection = new RTCPeerConnection({
+            iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+        });
+
+        peerConnection.onicecandidate = event => {
+            if (event.candidate) {
+                ws.send(JSON.stringify({ 'ice': event.candidate }));
+            }
+        };
+
+        peerConnection.ontrack = event => {
+            remoteVideo.srcObject = event.streams[0];
+        };
+
+        ws.onmessage = event => {
+            const data = JSON.parse(event.data);
+            if (data.ice) {
+                peerConnection.addIceCandidate(new RTCIceCandidate(data.ice));
+            } else if (data.sdp) {
+                peerConnection.setRemoteDescription(new RTCSessionDescription(data.sdp)).then(() => {
+                    if (peerConnection.remoteDescription.type === 'offer') {
+                        peerConnection.createAnswer().then(answer => {
+                            peerConnection.setLocalDescription(answer);
+                            ws.send(JSON.stringify({ 'sdp': answer }));
+                        });
+                    }
+                });
+            }
+        };
+    </script>
+</body>
+</html>
