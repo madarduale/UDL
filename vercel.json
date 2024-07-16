@@ -1,9 +1,17 @@
 {
-    "builds": [{
-        "src": "UDL_project/wsgi.py",
-        "use": "@vercel/python",
-        "config": { "maxLambdaSize": "15mb", "runtime": "python3.10" }
-    }],
+    "builds": [
+        {
+            "src": "install_weasyprint.sh",
+            "use": "@vercel/static-build"
+        },
+        {
+            "src": "UDL_project/wsgi.py",
+            "use": "@vercel/python",
+            "config": {
+                "runtime": "python3.11"
+            }
+        }
+    ],
     "routes": [
         {
             "src": "/(.*)",
