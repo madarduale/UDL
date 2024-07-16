@@ -1,15 +1,12 @@
-#!/bin/bash
+#!/usr/bin/env bash
+# Exit on error
+set -o errexit
 
-# Install system dependencies for WeasyPrint
-apt-get update
-apt-get install -y \
-  libpango-1.0-0 \
-  libcairo2 \
-  libgdk-pixbuf2.0-0 \
-  libffi-dev \
-  libjpeg-dev \
-  libxml2-dev \
-  libxslt1-dev
+# Modify this line as needed for your package manager (pip, poetry, etc.)
+pip install -r requirements.txt
 
-# Install WeasyPrint Python dependencies
-pip install weasyprint
+# Convert static asset files
+python manage.py collectstatic --no-input
+
+# Apply any outstanding database migrations
+python manage.py migrate
