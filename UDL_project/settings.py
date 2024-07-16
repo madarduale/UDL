@@ -32,15 +32,16 @@ environ.Env.read_env()
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = env('SECRET_KEY')
+SECRET_KEY = 'django-insecure-xz04kq#a!yyu7adcoo41e4pgc&84(ye^_3m^+2q=wtfo=cxv+z'
+# SECRET_KEY = env('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-# DEBUG = True
+DEBUG = False
 # False if not in os.environ because of casting above
-DEBUG = env('DEBUG')
+# DEBUG = env('DEBUG')
 
 # ALLOWED_HOSTS = [env('ALLOWED_HOSTS')]
-ALLOWED_HOSTS = ['.vercel.app']
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -182,17 +183,17 @@ WSGI_APPLICATION = 'UDL_project.wsgi.application'
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
 DATABASES = {
-    'default': dj_database_url.config(
-        default='postgres://default:iEH3pXw4DGaP@ep-noisy-bird-a49e8ddx.us-east-1.aws.neon.tech:5432/verceldb?sslmode=require'
-    ),
     # 'default': {
     #     'ENGINE': 'django.db.backends.postgresql',
-    #     'NAME': env('DB_NAME'),
-    #     'USER': env('DB_USER'),
-    #     'PASSWORD': env('DB_PSW'),
-    #     'HOST': env('DB_HOST'),
-    #     'PORT': env('DB_PORT'),
+    #     'NAME': 'udl_db',
+    #     'USER': 'madard',
+    #     'PASSWORD': 'gNesEkLC1TY8mLSERXNliV3exF8HVttR',
+    #     'HOST': 'dpg-cqbbdnqju9rs73blh2o0-a',
+    #     'PORT': 5432,
     # }
+
+        'default': dj_database_url.parse('postgresql://madard:gNesEkLC1TY8mLSERXNliV3exF8HVttR@dpg-cqbbdnqju9rs73blh2o0-a/udl_db')
+  
 }
 
 
