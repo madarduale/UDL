@@ -143,7 +143,10 @@ from .views import (
    account_setting,
    video_call,
    student_pdf,
-   professor_pdf
+   professor_pdf,
+   professors_pdf,
+   students_pdf,
+   professor_video_call
 )
 
 urlpatterns = [
@@ -155,8 +158,12 @@ urlpatterns = [
    path('search/', search, name='query'),
    path('account/<int:pk>/edit/', account_setting, name='account'),
    path('video-call/', video_call, name='video_call'),
+   path('professor-video-call/<int:exam_id>/', professor_video_call, name='professor_video_call'),
    path('student/<int:student_id>/pdf/', student_pdf, name='student_pdf'),
+   path('students/pdf/', students_pdf, name='students_pdf'),
     path('professor/<int:professor_id>/pdf/', professor_pdf, name='professor_pdf'),
+    path('professors/pdf/', professors_pdf, name='professors_pdf'),
+
 
    path('course/create/', course_create, name='course_create'),
    path('course/<int:pk>/', course_detail, name='course_detail'),

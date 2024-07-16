@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Professor Video Call</title>
+</head>
+<body>
+    <h1>Professor Video Call</h1>
+    <video id="localVideo" autoplay></video>
+    <video id="remoteVideo" autoplay></video>
+
+    <script>
+        const localVideo = document.getElementById('localVideo');
+        const remoteVideo = document.getElementById('remoteVideo');
+        const professorId = "{{ professor_id }}";  // Get professor's ID from the template context
+        const socket = new WebSocket('ws://' + window.location.host + '/ws/video-call/');
+
+        let localStream;
+
+        socket.onmessage = function(event) {
+            const data = JSON.parse(event.data);
+            console.log(data.message);
+            handleSignalingData(data);
+        };
+
+        socket.onopen = function(event) {
+            console.log('WebSocket is connected.');
+        };
+
+        socket.onclose = function(event) {
+            console.log('WebSocket is closed.');
+        };
+
+        navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+            .then(stream => {
+                localStream = stream;
+                localVideo.srcObject = stream;
+                stream.getTracks().forEach(track => {
+                    peerConnection.addTrack(track, stream);
+                });
+
+                // No need to start call from professor's side, just listen
+            })
+            .catch(error => console.error('Error accessing media devices.', error));
+
+        const peerConnection = new RTCPeerConnection();
+
+        peerConnection.ontrack = function(event) {
+            remoteVideo.srcObject = event.streams[0];
+        };
+
+        function handleSignalingData(data) {
+            switch(data.type) {
+                case 'offer':
+                    peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer));
+                    peerConnection.createAnswer()
+                        .then(answer => {
+                            peerConnection.setLocalDescription(answer);
+                            socket.send(JSON.stringify({ type: 'answer', answer: answer, professor_id: professorId }));
+                        });
+                    break;
+                case 'answer':
+                    peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
+                    break;
+                case 'candidate':
+                    peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate));
+                    break;
+            }
+        }
+
+        peerConnection.onicecandidate = function(event) {
+            if (event.candidate) {
+                socket.send(JSON.stringify({ type: 'candidate', candidate: event.candidate, professor_id: professorId }));
+            }
+        };
+    </script>
+</body>
+</html>

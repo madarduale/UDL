@@ -8,7 +8,7 @@
             {% csrf_token %}
             {{ comment_form.as_p }}
             <input type="hidden" name="parent" value="{{ reply.id }}">
-            <button type="submit">Post Reply</button>
+            <button type="submit" class="btn btn-secondary">Post Reply</button>
           </form>
         </div>
         {% include 'comments/comment_replies.html' with comment=reply %}

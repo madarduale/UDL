@@ -20,7 +20,7 @@
 {% for item in professors_with_avatars %}
 <div class="manage-wrap">
     <a class="btn btn-primary" href="{% url 'professor_signup' %}"><i class="fas fa-plus"></i> Add Professor</a>
-    <a class="btn btn-primary" target="_blank" href="{% url 'professor_pdf' item.professor.id %}"><i class="fas fa-download"></i> Download PDF</a>
+    <a class="btn btn-primary" target="_blank" href="{% url 'professors_pdf' %}"><i class="fas fa-download"></i> Download PDF</a>
 </div>
 {% endfor %}
 {% endif %}

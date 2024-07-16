@@ -20,7 +20,7 @@
 {% for item in students_with_avatars %}
 <div class="manage-wrap">
     <a class="btn btn-primary" href="{% url 'student_signup' %}"><i class="fas fa-plus"></i> Add student</a>
-    <a class="btn btn-primary" target="_blank" href="{% url 'student_pdf' item.student.id %}"><i class="fas fa-download"></i> Download PDF</a>
+    <a class="btn btn-primary" target="_blank" href="{% url 'students_pdf' %}"><i class="fas fa-download"></i> Download PDF</a>
 </div>
 {% endfor %}
 {% endif %}

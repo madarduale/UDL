@@ -46,6 +46,7 @@
 
  <a href="{% url 'question_list' %}" class="btn btn-primary">Questions</a>
 <a href="{% url 'choice_list' %}" class="btn btn-primary">Choices</a>
+<a href="{% url 'professor_video_call' exam.pk %}" class="btn btn-primary">Join Video Call</a>
 <a href="{% url 'exam_submission_list_by_id' exam.pk %}" class="btn btn-primary" style="left: 43rem; position: relative;">submitted Exam</a>
 
 {% endif %}
@@ -54,6 +55,7 @@
 <hr>
 
 {% if not user.is_student %}
+<a href="{% url 'video_call' %}">start videe call</a>
 <ul class="list-group">
     
             {% if exam.end_time < current_time %}
@@ -210,6 +212,14 @@
         </ul>
     </div>
 
+    <h1>Video Call</h1>
+    <video id="localVideo" autoplay></video>
+    <video id="remoteVideo" autoplay></video>
+    <div>
+        <button id="toggleVideo">Disable Video</button>
+        <button id="toggleAudio">Disable Audio</button>
+    </div>
+
     <script>
         // Countdown Timer
         const endTime = new Date("{{ exam.end_time|date:'Y-m-d H:i:s' }}").getTime();
@@ -232,21 +242,118 @@
             countdownTimer.innerHTML = `Remaining Time: ${hours}h ${minutes}m ${seconds}s`;
         }, 1000);
 
-        // Access Camera and Prevent Exam Entry if Camera is Not Opened
-        async function enableCamera() {
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-                const video = document.createElement('video');
-                video.srcObject = stream;
-                video.play();
-                document.body.appendChild(video);
-            } catch (err) {
-                alert('Camera access is required to start the exam.');
+
+        // Video Call
+        const localVideo = document.getElementById('localVideo');
+        const remoteVideo = document.getElementById('remoteVideo');
+        const toggleVideoButton = document.getElementById('toggleVideo');
+        const toggleAudioButton = document.getElementById('toggleAudio');
+        const professorId = "{{ professor_id }}"; // Replace with the actual professor's ID
+        const socket = new WebSocket('ws://' + window.location.host + '/ws/video-call/');
+
+        let localStream;
+        let videoEnabled = true;
+        let audioEnabled = true;
+
+        socket.onmessage = function(event) {
+            const data = JSON.parse(event.data);
+            console.log(data.message);
+            handleSignalingData(data);
+        };
+
+        socket.onopen = function(event) {
+            console.log('WebSocket is connected.');
+        };
+
+        socket.onclose = function(event) {
+            console.log('WebSocket is closed.');
+        };
+
+        navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+            .then(stream => {
+                localStream = stream;
+                localVideo.srcObject = stream;
+                stream.getTracks().forEach(track => {
+                    peerConnection.addTrack(track, stream);
+                });
+
+                startCall();
+            })
+            .catch(() => {
+                alert('Camera and microphone access is required to start the video call.');
                 window.location.href = '{% url "dashboard" %}';  // Redirect to home or any other appropriate page
+            });
+
+        const peerConnection = new RTCPeerConnection();
+
+        peerConnection.ontrack = function(event) {
+            remoteVideo.srcObject = event.streams[0];
+        };
+
+        function handleSignalingData(data) {
+            switch(data.type) {
+                case 'offer':
+                    peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer));
+                    peerConnection.createAnswer()
+                        .then(answer => {
+                            peerConnection.setLocalDescription(answer);
+                            socket.send(JSON.stringify({ type: 'answer', answer: answer, professor_id: professorId }));
+                        });
+                    break;
+                case 'answer':
+                    peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
+                    break;
+                case 'candidate':
+                    peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate));
+                    break;
             }
         }
 
-        enableCamera();
+        function startCall() {
+            peerConnection.createOffer()
+                .then(offer => {
+                    peerConnection.setLocalDescription(offer);
+                    socket.send(JSON.stringify({ type: 'offer', offer: offer, professor_id: professorId }));
+                });
+        }
+
+        peerConnection.onicecandidate = function(event) {
+            if (event.candidate) {
+                socket.send(JSON.stringify({ type: 'candidate', candidate: event.candidate, professor_id: professorId }));
+            }
+        };
+
+        toggleVideoButton.onclick = function() {
+            videoEnabled = !videoEnabled;
+            localStream.getVideoTracks()[0].enabled = videoEnabled;
+            toggleVideoButton.textContent = videoEnabled ? 'Disable Video' : 'Enable Video';
+        };
+
+        toggleAudioButton.onclick = function() {
+            audioEnabled = !audioEnabled;
+            localStream.getAudioTracks()[0].enabled = audioEnabled;
+            toggleAudioButton.textContent = audioEnabled ? 'Disable Audio' : 'Enable Audio';
+        };
+
+        // Handle WebRTC signaling
+        // Implement WebRTC signaling logic here
+
+        
+        // // Access Camera and Prevent Exam Entry if Camera is Not Opened
+        // async function enableCamera() {
+        //     try {
+        //         const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        //         const video = document.createElement('video');
+        //         video.srcObject = stream;
+        //         video.play();
+        //         document.body.appendChild(video);
+        //     } catch (err) {
+        //         alert('Camera access is required to start the exam.');
+        //         window.location.href = '{% url "dashboard" %}';  // Redirect to home or any other appropriate page
+        //     }
+        // }
+
+        // enableCamera();
 
         // Prevent Tab Switching and Auto Submit Exam Form
         document.addEventListener('visibilitychange', function() {

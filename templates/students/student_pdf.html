@@ -3,25 +3,90 @@
 <head>
     <meta charset="UTF-8">
     <title>Student Information</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        div {
+            margin: 20px;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+
+        h2 {
+            color: #333;
+            text-align: center;
+        }
+
+        h3 {
+            color: #333;
+            /* text-align: center; */
+        }
+
+        p {
+            color: #333;
+            margin: 10px 0;
+        }
+
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        li {
+            margin: 10px 0;
+        }
+
+        .page-break {
+            page-break-after: always;
+        }
+    </style>
 </head>
 <body>
-    <h1>Student Information</h1>
-    <h2>{{ user.username }}</h2>
-    <p><strong>Full Name:</strong> {{ user.first_name }} {{ user.last_name }}</p>
-    <p><strong>Email:</strong> {{ user.email }}</p>
-    <h3>Profile</h3>
-    <p><strong>UID:</strong> {{ profile.UID }}</p>
-    <h3>Exam Grades</h3>
-    <ul>
-        {% for grade in exam_grades %}
-        <li>{{ grade.course.title }}: {{ grade.grade }}</li>
-        {% endfor %}
-    </ul>
-    <h3>Assignment Grades</h3>
-    <ul>
-        {% for grade in assignment_grades %}
-        <li>{{ grade.course.title }}: {{ grade.grade }}</li>
-        {% endfor %}
-    </ul>
+    <div>
+
+        <h1>Student Information</h1>
+        <h2>{{ user.username }}</h2>
+        {% if avatar_url %}
+        <img src="{{ avatar_url }}" alt=" {{user.username }}" style="width: 100px; height: 100px;">
+        {% endif %}
+        <p><strong>Full Name:</strong> {{ user.first_name }} {{ user.last_name }}</p>
+        <p><strong>Email:</strong> {{ user.email }}</p>
+        <h3>Profile</h3>
+        <p><strong>UID:</strong> {{ user.UID }}</p>
+        <p><strong>Phone:</strong> {{ profile.telephone }}</p>
+        <p><strong>Address:</strong> {{ profile.location }}</p>
+        <h3>Enrolled Courses</h3>
+        <ul>
+            {% for course in courses %}
+            <li>{{course.title}} ({{course.code}})</li>
+            {% endfor %}
+        </ul>
+        <h3>Exam Grades</h3>
+        <ul>
+            {% for grade in exam_grades %}
+            <li>{{ grade.submission.exam.course.title }}: {{ grade.score }}</li>
+            {% endfor %}
+        </ul>
+        <h3>Assignment Grades</h3>
+        <ul>
+            {% for grade in assignment_grades %}
+            <li>{{ grade.assignment_solution.assignment.course.title }}: {{ grade.score }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+    <hr>
+    <div class="page-break"></div>
 </body>
 </html>

@@ -1,6 +1,4 @@
 from django.shortcuts import render, redirect
-from .models import Message
-# Create your views here.
 import jwt
 import json
 from .jaas_jwt import JaaSJwtBuilder
@@ -14,7 +12,8 @@ from .searchs import SearchView
 from collections import defaultdict
 from django.db.models import Count
 import weasyprint
-from django.http import HttpResponse
+from weasyprint import HTML
+from django.http import HttpResponse, HttpResponseForbidden
 from django.template.loader import render_to_string
 from .forms import (
     MessageForm, CourseForm, LectureForm,
@@ -44,21 +43,29 @@ admin_or_superuser_required, superuser_required,
 
 
 
-
-
 @login_required
 def student_pdf(request, student_id):
     user = Student.objects.get(id=student_id)
     profile = Profile.objects.get(user=user)
     exam_grades = ExamGrading.objects.filter(student=user)
     assignment_grades = AssignmentGrade.objects.filter(student=user)
+    enrolled_courses = EnrolledCourse.objects.filter(student=user)
+    courses = []
+    for enrolled_course in enrolled_courses:
+        print(enrolled_course)
+        courses.extend(Course.objects.filter(enrolled_course=enrolled_course))
+  
     template_name = 'students/student_pdf.html'
+    avatar_url = None
+    if profile.avatar:
+        avatar_url = request.build_absolute_uri(profile.avatar.url)
     html_string = render_to_string(template_name, {
         'user': user,
         'profile': profile,
         'exam_grades': exam_grades,
         'assignment_grades': assignment_grades ,
-        # 'courses': courses if user_type == 'professor' else None
+        'avatar_url': avatar_url,
+        'courses': courses
     })
 
     # Generate PDF
@@ -67,6 +74,50 @@ def student_pdf(request, student_id):
     weasyprint.HTML(string=html_string).write_pdf(response)
 
     return response
+
+@login_required
+def students_pdf(request):
+    user = request.user
+    students = []
+    if user.is_superuser:
+        students = Student.objects.all()
+    elif user.is_admin:
+        admin = get_object_or_404(Admin, id=user.id)
+        for school in admin.school.all():
+            students.extend(Student.objects.filter(school=school))
+    
+    # Generate the HTML content for all students
+    html_string = ""
+    for student in students:
+        profile = Profile.objects.get(user=student)
+        exam_grades = ExamGrading.objects.filter(student=student)
+        assignment_grades = AssignmentGrade.objects.filter(student=student)
+        enrolled_courses = EnrolledCourse.objects.filter(student=student)
+        courses = []
+        for enrolled_course in enrolled_courses:
+            courses.extend(Course.objects.filter(enrolled_course=enrolled_course))
+        template_name = 'students/student_pdf.html'
+        avatar_url = None
+        if profile.avatar:
+            avatar_url = request.build_absolute_uri(profile.avatar.url)
+        html_string += render_to_string(template_name, {
+            'user': student,
+            'profile': profile,
+            'exam_grades': exam_grades,
+            'assignment_grades': assignment_grades,
+            'avatar_url': avatar_url,
+            'courses': courses
+        })
+
+    # Generate PDF
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = 'attachment; filename="students_info.pdf"'
+    weasyprint.HTML(string=html_string).write_pdf(response)
+
+
+    return response
+
+
 
 @login_required
 def professor_pdf(request, professor_id):
@@ -74,14 +125,17 @@ def professor_pdf(request, professor_id):
     profile = Profile.objects.get(user=user)
     courses = Course.objects.filter(professors=user)
     template_name = 'professors/professor_pdf.html'
-
+    avatar_url = None
+    if profile.avatar:
+        avatar_url = request.build_absolute_uri(profile.avatar.url)
      # Render HTML template with context data
     html_string = render_to_string(template_name, {
         'user': user,
         'profile': profile,
         # 'exam_grades': exam_grades if user_type == 'student' else None,
         # 'assignment_grades': assignment_grades if user_type == 'student' else None,
-        'courses': courses 
+        'courses': courses,
+        'avatar_url': avatar_url 
     })
 
     # Generate PDF
@@ -91,39 +145,48 @@ def professor_pdf(request, professor_id):
 
     return response
 
-def generate_pdf(user_id, *args):
-    # Check if user is student or professor
-    user_type = args[0]
-
-    if user_type == 'student':
-        user = Student.objects.get(id=user_id)
-        profile = Profile.objects.get(user=user)
-        exam_grades = ExamGrading.objects.filter(student=user)
-        assignment_grades = AssignmentGrade.objects.filter(student=user)
-        template_name = 'students/student_pdf.html'
-    elif user_type == 'professor':
-        user = Professor.objects.get(id=user_id)
-        profile = Profile.objects.get(user=user)
-        courses = Course.objects.filter(professors=user)
+@login_required
+def professors_pdf(request):
+    user = request.user
+    professors = []
+    
+    if user.is_superuser:
+        professors = Professor.objects.all()
+    elif user.is_admin:
+        admin = get_object_or_404(Admin, id=user.id)
+        for school in admin.school.all():
+            professors.extend(Professor.objects.filter(school=school))
+    
+    
+    # Generate the HTML content for all professors
+    html_string = ""
+    for professor in professors:
+        profile = Profile.objects.get(user=professor)
+        courses = Course.objects.filter(professors=professor)
         template_name = 'professors/professor_pdf.html'
-    else:
-        return None
 
-    # Render HTML template with context data
-    html_string = render_to_string(template_name, {
-        'user': user,
-        'profile': profile,
-        'exam_grades': exam_grades if user_type == 'student' else None,
-        'assignment_grades': assignment_grades if user_type == 'student' else None,
-        'courses': courses if user_type == 'professor' else None
-    })
+                # Construct the absolute URL for the avatar
+        avatar_url = None
+        if profile.avatar:
+            avatar_url = request.build_absolute_uri(profile.avatar.url)
+
+        html_string += render_to_string(template_name, {
+            'user': professor,
+            'profile': profile,
+            'courses': courses ,
+            'avatar_url': avatar_url
+        })
+    #page break
+    # html_string += '<div class="page-break"></div>'
 
     # Generate PDF
     response = HttpResponse(content_type='application/pdf')
-    response['Content-Disposition'] = f'attachment; filename="{user.username}_info.pdf"'
-    weasyprint.HTML(string=html_string).write_pdf(response)
-
+    response['Content-Disposition'] = 'attachment; filename="professors_info.pdf"'
+    HTML(string=html_string).write_pdf(response)
+    
     return response
+
+
 
 
 @login_required(login_url='/accounts/login/')
@@ -133,6 +196,15 @@ def home(request):
 
 def video_call(request):
     return render(request, 'udl_app/video.html')
+
+@login_required
+def professor_video_call(request, exam_id):
+    user = request.user
+    if not user.is_professor:
+        return HttpResponseForbidden("You are not authorized to access this page.")
+
+    exam = get_object_or_404(Exam, pk=exam_id)
+    return render(request, 'professors/professor_video_call.html', {'exam': exam, 'professor_id': user.id})
 
 
 def generate_jwt(user):
@@ -825,11 +897,12 @@ def exam_list(request):
 @login_required
 def exam_detail(request, pk):
     user = request.user
+    
     exam = get_object_or_404(Exam, pk=pk)
     submited_exams = ExamSubmission.objects.filter(exam=exam)
 
     for submited_exam in submited_exams:
-        if submited_exam.student.id == user:
+        if submited_exam.student.id == user.id:
             messages.error(request, 'You have already submited the exam!')
             return redirect('exam_list')
         
@@ -840,7 +913,14 @@ def exam_detail(request, pk):
     current_time = timezone.now()
     if request.method == 'POST':
         exam_edit(request, pk)
-    return render(request, 'exams/exam_detail.html', {'exam': exam, 'form': form, 'current_time': current_time, 'group_questions_by_type': dict(group_questions_by_type)})
+    professor_id = exam.course.professors.first().id
+    return render(request, 'exams/exam_detail.html', {
+        'exam': exam,
+        'form': form, 
+        'current_time': current_time, 
+        'group_questions_by_type': dict(group_questions_by_type),
+        'professor_id': professor_id
+        })
 
 
 @login_required
