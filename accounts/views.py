@@ -19,6 +19,9 @@ class AdminSingUpView(View):
         if form.is_valid():
             user = form.save(commit=False)
             user.save()
+            school = form.cleaned_data.get('school')
+            if school is not None:
+                user.school.set(list(school))
             messages.success(request, 'user created successfully!.')
             return redirect('login')
         else:
@@ -38,6 +41,10 @@ class StudentSingUpView(View):
         if form.is_valid():
             user = form.save(commit=False)
             user.save()
+            school = form.cleaned_data.get('school')
+            if school is not None:
+                user.school.set(list(school))
+            
             messages.success(request, 'user created successfully!.')
             return redirect('login')
         else:
@@ -56,6 +63,10 @@ class ProfessorSingUpView(View):
         if form.is_valid():
             user = form.save(commit=False)
             user.save()
+            school = form.cleaned_data.get('school')
+            if school is not None:
+                user.school.set(list(school))
+                
             messages.success(request, 'user created successfully!.')
             return redirect('login')
         else:

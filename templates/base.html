@@ -24,6 +24,15 @@
             {% include 'navbar.html' %}
         {% endblock %}
 
+        <button type="button" class="btn btn-primary position-relative" id="btn1" style="display: none;">
+            <a href="{% url 'inbox' %}" style="color: #ffff;"> Inbox</a>
+           
+            <span id="unread-count" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+              {{ unread_count }}
+              <span class="visually-hidden">unread messages</span>
+            </span>
+          </button>
+
         <div class="container-fluid" id="main-content">
             {% block content %}{% endblock content %}
         </div>
@@ -44,6 +53,25 @@
             enableTime: true,
             dateFormat: "Y-m-d H:i",
         });
+
+        function checkUnreadMessages() {
+            fetch('/messages/unread_count/')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.unread_count > 0){
+
+                        document.getElementById('btn1').style.display = 'block';
+                        unreaded = document.getElementById('unread-count').textContent =  data.unread_count;
+                        console.log(unreaded);
+                    }
+                    else{
+                        document.getElementById('btn1').style.display = 'none';
+                    }
+                });
+        }
+
+        setInterval(checkUnreadMessages, 60000);  // Check every minute
+
     </script>
     {% block extrascripts %}{% endblock extrascripts %}
 </body>

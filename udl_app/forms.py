@@ -10,7 +10,7 @@ from .models import(
     Assignment, AssignmentGrade, AssignmentSubmission,
     Exam, ExamGrading, ExamSubmission,
     Question, Choice, Resource, EnrolledCourse,
-    Discussion, Comment, Profile,
+    Discussion, Comment, Profile, Semester,
     School, Message, ZoomMeeting,
 ) 
 
@@ -77,7 +77,7 @@ class StudentForm(forms.ModelForm):
 class SchoolForm(forms.ModelForm):
     class Meta:
         model = School
-        fields = ['name']
+        fields = ['name', 'semesters']
 
 
 
@@ -129,7 +129,7 @@ class MessageForm(forms.ModelForm):
 class CourseForm(forms.ModelForm):
     class Meta:
         model = Course
-        fields = ['code', 'title', 'description', 'school', 'professors', 'image']
+        fields = ['code', 'title', 'description', 'school', 'professors', 'semester', 'image']
 
     def __init__(self, *args, **kwargs):
         user = kwargs.pop('user', None)
@@ -143,6 +143,15 @@ class CourseForm(forms.ModelForm):
             elif user.is_superuser:
                 self.fields['school'].queryset = School.objects.all()
                 self.fields['professors'].queryset = Professor.objects.all()
+
+class SemesterForm(forms.ModelForm):
+    class Meta:
+        model = Semester
+        fields = ['semester', 'start_date', 'end_date']
+        widgets = {
+            'start_date': forms.DateInput(attrs={'type':'date', 'format': '%d/%m/%Y'}),
+            'end_date': forms.DateInput(attrs={'type':'date', 'format': '%d/%m/%Y'})
+        }
 
 class LectureForm(forms.ModelForm):
     class Meta:

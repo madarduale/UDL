@@ -29,6 +29,7 @@
         {% url 'professor_list' as profs %}
         {% url 'student_list' as stu %}
         {% url 'course_list' as courses %}
+        {% url 'semester_list' as sm %}
         {% url 'lecture_list' as lectures %}
         {% url 'assignment_list' as assignments %}
         {% url 'assignment_submission_list' as assignment_sub %}
@@ -57,6 +58,9 @@
             {% endcomment %}
             <li class="{% if request.path == sl %}active{% endif %}">
                 <a href="{% url 'school_list' %}"><i class="fas fa-school"></i>Faculty</a>
+            </li>
+            <li class="{% if request.path == sm %}active{% endif %}">
+                <a href="{% url 'semester_list' %}"><i class="fas fa-hourglass-start"></i>Semesters</a>
             </li>
             {% if  not user.is_superuser %}
             <li class="{% if request.path == prof %}active{% endif %}">
@@ -116,7 +120,10 @@
                 <a href="{% url 'profile' %}"><i class="fas fa-user"></i>Profile</a>
             </li>
             <li class="{% if request.path == sl %}active{% endif %}">
-                <a href="{% url 'school_list' %}"><i class="fas fa-school"></i>Faculty</a>
+                <a href="{% url 'school_list' %}"><i class="fas fa-list-ol"></i>Faculty</a>
+            </li>
+            <li class="{% if request.path == sm %}active{% endif %}">
+                <a href="{% url 'semester_list' %}"><i class="fas fa-hourglass-start"></i>Semesters</a>
             </li>
             <li class="{% if request.path == profs %}active{% endif %}">
                 <a href="{% url 'professor_list' %}"><i class="fas fa-chalkboard-teacher"></i>Professors</a>

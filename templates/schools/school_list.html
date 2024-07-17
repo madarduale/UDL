@@ -9,12 +9,20 @@
     </ol>
 </nav>
 
+{% if messages %}
+    {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}">
+            {{ message }}
+        </div>
+    {% endfor %}
+{% endif %}
+
 <h2>Faculty</h2>
 {% if user.is_superuser %}
             <div class="card-body">
                 <!-- Button trigger modal -->
               <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#exampleModal">
-                <i class="fa fa-pencil-square-o" aria-hidden="true"></i>
+                <i class="fa fa-plus" aria-hidden="true"></i>
               </button>
         
                 <!-- Modal -->

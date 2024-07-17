@@ -20,6 +20,13 @@ from .views import (
    school_list,
    school_delete,
 
+   semester_create,
+   semester_detail,
+   semester_edit,
+   semester_list,
+   semester_delete,
+
+
    lecture_create,
    lecture_detail,
    lecture_edit,
@@ -119,6 +126,7 @@ from .views import (
    message_edit,
    message_list,
    message_delete,
+   unread_count,
 
  
    admin_detail,
@@ -155,6 +163,7 @@ urlpatterns = [
    path('meet/',jitsi_meet, name='jitsi_meeting'),
    path('send/', send_message, name='send_message'),
    path('inbox/', inbox, name='inbox'),
+   path('messages/unread_count/', unread_count, name='unread_count'),
    path('search/', search, name='query'),
    path('account/<int:pk>/edit/', account_setting, name='account'),
    path('video-call/', video_call, name='video_call'),
@@ -177,6 +186,13 @@ urlpatterns = [
    path('school/<int:pk>/edit/', school_edit, name='school_edit'),
    path('schools/', school_list, name='school_list'),
    path('school/<int:pk>/delete/', school_delete, name='school_delete'),
+
+
+   path('semester/create/', semester_create, name='semester_create'),
+   path('semester/<int:pk>/', semester_detail, name='semester_detail'),
+   path('semester/<int:pk>/edit/', semester_edit, name='semester_edit'),
+   path('semesters/', semester_list, name='semester_list'),
+   path('semester/<int:pk>/delete/', semester_delete, name='semester_delete'),
 
    path('lecture/create/', lecture_create, name='lecture_create'),
    path('lecture/<int:pk>/', lecture_detail, name='lecture_detail'),

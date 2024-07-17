@@ -110,7 +110,11 @@ class Student(BaseUser):
         return self.username
 
 class Semester(models.Model):
-        semester = models.IntegerField()
+        CHOICES = [
+            (1, 1),
+            (2, 2)
+        ]
+        semester = models.IntegerField(choices=CHOICES, default=1)
         start_date = models.DateField()
         end_date = models.DateField()
 
@@ -364,6 +368,7 @@ class Message(models.Model):
     content = models.TextField()
     url = models.URLField(max_length=200, blank=True, null=True)
     timestamp = models.DateTimeField(auto_now_add=True)
+    is_read = models.BooleanField(default=False)
     objects = MessageManager()
 
     def __str__(self):

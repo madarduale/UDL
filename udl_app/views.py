@@ -13,13 +13,13 @@ from collections import defaultdict
 from django.db.models import Count
 import weasyprint
 from weasyprint import HTML
-from django.http import HttpResponse, HttpResponseForbidden
+from django.http import HttpResponse, HttpResponseForbidden, JsonResponse
 from django.template.loader import render_to_string
 from .forms import (
     MessageForm, CourseForm, LectureForm,
     AssignmentForm, AssigmmentGradeForm, AssignmentSubmissionForm,
     ExamForm, ExamGradingForm, ExamSubmissionForm,
-    QuestionForm, SchoolForm,
+    QuestionForm, SchoolForm, SemesterForm,
     ChoiceForm, ResourceForm, EnrolledCourseForm,
     DiscussionForm, CommentForm, ProfileForm,
     ZoomMeetingForm, AdminForm, ProfessorForm, StudentForm, BaseUserForm
@@ -29,7 +29,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from .models import(
     Admin, Professor, Student, Course, Lecture, Grade,
     Assignment, AssignmentGrade, AssignmentSubmission,
-    Exam, ExamGrading, ExamSubmission,
+    Exam, ExamGrading, ExamSubmission, Semester,
     Question, Choice, Resource, EnrolledCourse,
     Discussion, Comment, Profile, LectureProgress,
     School, Message, ZoomMeeting, BaseUser
@@ -252,22 +252,32 @@ def send_message(request):
         form = MessageForm(request=request)
     return render(request, 'udl_app/send_message.html', {'form': form})
 
+def get_unread_message_count(user):
+    return Message.objects.filter(recipients=user, is_read=False).count()
+
 @login_required
 def inbox(request):
-    received_messages = Message.objects.filter(recipients=request.user)
-    print(received_messages)
+    received_messages = Message.objects.filter(recipients=request.user).order_by('-timestamp')
+    unread_count = get_unread_message_count(request.user)
     jwt_token = generate_jwt(request.user)
     decoded_token = jwt_token.decode("utf-8")
-    print(decoded_token)
     message_urls = []  
     for message in received_messages:
+        if not message.is_read:
+            message.is_read = True
+            message.save()
         if message.url:
             meeting_url = f'{message.url}?jwt={decoded_token}'
             message_urls.append((message, meeting_url))
-            # print(meeting_url)
         else:
             message_urls.append((message, None))
     return render(request, 'udl_app/inbox.html', {'message_urls':message_urls})
+
+
+@login_required
+def unread_count(request):
+    unread_count = get_unread_message_count(request.user)
+    return JsonResponse({'unread_count': unread_count})
 
 
 @login_required
@@ -462,6 +472,7 @@ def school_create(request):
         form = SchoolForm(request.POST)
         if form.is_valid():
             form.save()
+            messages.success(request, 'School created successfully!')
             return redirect('school_list')
     else:
         form = SchoolForm()
@@ -475,6 +486,7 @@ def school_edit(request, pk):
         form = SchoolForm(request.POST, instance=school)
         if form.is_valid():
             form.save()
+            messages.success(request, 'School updated successfully!')
             return redirect('school_list')
     else:
         form = SchoolForm(instance=school)
@@ -486,9 +498,64 @@ def school_delete(request, pk):
     school = get_object_or_404(School, pk=pk)
     if request.method == 'POST':
         school.delete()
+        messages.success(request, 'School deleted successfully!')
         return redirect('school_list')
     return render(request, 'schools/school_confirm_delete.html', {'school': school})
 
+@login_required
+@admin_or_superuser_required
+def semester_list(request):
+    form = SemesterForm()
+    semesters = Semester.objects.all()
+    if request.method == 'POST':
+        semester_create(request)
+    return render(request, 'semesters/semester_list.html', {'semesters': semesters, 'form': form})
+
+@login_required
+@admin_or_superuser_required
+def semester_detail(request, pk):
+    semester = get_object_or_404(Semester, pk=pk)
+    form = SemesterForm(instance=semester)
+    if request.method == 'POST':
+        semester_edit(request, pk)  
+    return render(request, 'semesters/semester_detail.html', {'semester': semester, 'form': form})
+
+@login_required
+@admin_or_superuser_required
+def semester_create(request):
+    if request.method == 'POST':
+        form = SemesterForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Semester created successfully!')
+            return redirect('semester_list')
+    else:
+        form = SemesterForm()
+    return render(request, 'semesters/semester_create.html', {'form': form})
+
+@login_required
+@admin_or_superuser_required
+def semester_edit(request, pk):
+    semester = get_object_or_404(Semester, pk=pk)
+    if request.method == 'POST':
+        form = SemesterForm(request.POST, instance=semester)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Semester updated successfully!')
+            return redirect('semester_list')
+    else:
+        form = SemesterForm(instance=semester)
+    return render(request, 'semesters/semester_edite.html', {'form': form})
+
+@login_required
+@admin_or_superuser_required
+def semester_delete(request, pk):
+    semester = get_object_or_404(Semester, pk=pk)
+    if request.method == 'POST':
+        semester.delete()
+        messages.success(request, 'Semester deleted successfully!')
+        return redirect('semester_list')
+    return render(request, 'semesters/semester_confirm_delete.html', {'semester': semester})
 
 @login_required
 def complete_lecture(request, lecture_id):
@@ -871,6 +938,7 @@ def exam_list(request):
     form3 = QuestionForm(user=request.user)
     form4 = ChoiceForm(user=request.user)
     current_time = timezone.now()
+    exams = None
     if request.method == 'POST':
         exam_create(request)
         # exam_submission_create(request)
@@ -1734,8 +1802,17 @@ def student_list(request):
         # Get all students
         students = Student.objects.all()
         student_avatars = {student.id: Profile.objects.filter(user=student).first() for student in students}
-        
-        return render(request, 'students/student_list.html', {'students': students, 'student_avatars': student_avatars})
+
+        students_with_avatars = [
+            {
+                'student': student,
+                'telephone': student_avatars[student.id].telephone if student.id in student_avatars else 'N/A',
+                'location': student_avatars[student.id].location if student.id in student_avatars else 'N/A'
+            }
+            for student in students
+        ]
+    
+        return render(request, 'students/student_list.html', {'students': students, 'students_with_avatars': students_with_avatars})
     else:
         return redirect('home')  # Handle the case where the user is not an admin
 
@@ -1782,7 +1859,7 @@ def professor_list(request):
     else:
         # Check if the user is an admin
         admin = get_object_or_404(Admin, id=user.id)
-        school = School.objects.filter(admin_school=admin).first()  # Assuming one admin manages one school
+        school = School.objects.filter(admin_school=admin).first()  
         professors = Professor.objects.filter(courses_taught__school=school).distinct()
     
     # Retrieve profile pictures for professors

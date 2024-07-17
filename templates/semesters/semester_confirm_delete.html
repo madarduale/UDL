@@ -1,0 +1,11 @@
+{% extends '../base.html' %}
+
+{% block content %}
+<h2>Delete Semester</h2>
+<p>Are you sure you want to delete Semester "{{ semester.semester }}"?</p>
+<form method="post">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-danger">Yes, delete</button>
+    <a href="{% url 'semester_list' %}" class="btn btn-success">Cancel</a>
+</form>
+{% endblock content %}
