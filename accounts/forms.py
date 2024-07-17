@@ -16,9 +16,10 @@ class AdminSignupForm(UserCreationForm):
             "last_name",
             "email",
             "school",
-            "is_superuser",
+            # "is_superuser",
             "is_active",
-            "is_staff",
+            # "is_staff",
+            "is_admin"
         ]
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -27,9 +28,9 @@ class AdminSignupForm(UserCreationForm):
         self.fields['password1'].help_text = '' 
         self.fields['password2'].help_text = '' 
         self.fields['school'].help_text = '' 
-        self.fields['is_superuser'].help_text = '' 
+        self.fields['is_admin'].help_text = '' 
         self.fields['is_active'].help_text = '' 
-        self.fields['is_staff'].help_text = '' 
+        # self.fields['is_staff'].help_text = '' 
        
 class AdminEditForm(UserChangeForm):
     class Meta:
@@ -40,9 +41,9 @@ class AdminEditForm(UserChangeForm):
             "last_name",
             "email",
             "school",
-            "is_superuser",
+            "is_admin",
             "is_active",
-            "is_staff",
+            # "is_staff",
         ]
 
 class StudentSignupForm(UserCreationForm):
