@@ -32,13 +32,12 @@ environ.Env.read_env()
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-xz04kq#a!yyu7adcoo41e4pgc&84(ye^_3m^+2q=wtfo=cxv+z'
-# SECRET_KEY = env('SECRET_KEY')
+
+SECRET_KEY = env('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
 # False if not in os.environ because of casting above
-# DEBUG = env('DEBUG')
+DEBUG = env('DEBUG')
 
 # ALLOWED_HOSTS = [env('ALLOWED_HOSTS')]
 ALLOWED_HOSTS = ['*']
@@ -193,7 +192,7 @@ DATABASES = {
     #     'PORT': 5432,
     # }
 
-        'default': dj_database_url.parse('postgresql://madard:gNesEkLC1TY8mLSERXNliV3exF8HVttR@dpg-cqbbdnqju9rs73blh2o0-a/udl_db')
+        'default': dj_database_url.parse(env('DATABASE_URL'))
   
 }
 
@@ -244,7 +243,6 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 SASS_PROCESSOR_ROOT = os.path.join(BASE_DIR, 'static')
 
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage' 
 
 STATICFILES_FINDERS = [
     'django.contrib.staticfiles.finders.FileSystemFinder',
@@ -255,6 +253,8 @@ STATICFILES_FINDERS = [
 # Media files config
 MEDIA_URL = "/media/"
 MEDIA_ROOT = os.path.join(BASE_DIR, "media")
+
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage' 
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
