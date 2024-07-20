@@ -15,8 +15,8 @@
                     <i class="fas fa-times"></i>
                 </div>
             </div>
-            <a href="{% url 'home' %}">
-                <img src="{% static 'img/University_of_Hargeisa1.svg' %}" width="110px" alt="Logo Django LMS">
+            <a href="{% url 'dashboard' %}">
+                <img src="{% static 'img/University_of_Hargeisa1.svg' %}" width="110px" alt="UDL logo">
             </a>
         </div>
 
@@ -51,11 +51,7 @@
             <li class="{% if request.path == dash %}active{% endif %}">
                 <a href="{% url 'dashboard' %}"><i class="fas fa-tachometer-alt"></i>Dashboard</a>
             </li>
-            {% comment %}
-            <li class="{% if request.path == hom %}active{% endif %}">
-                <a href="{% url 'home' %}"><i class="fas fa-home"></i>Home</a>
-            </li>
-            {% endcomment %}
+     
             <li class="{% if request.path == sl %}active{% endif %}">
                 <a href="{% url 'school_list' %}"><i class="fas fa-school"></i>Faculty</a>
             </li>
@@ -111,11 +107,7 @@
             <li class="{% if request.path == dash %}active{% endif %}">
                 <a href="{% url 'dashboard' %}"><i class="fas fa-tachometer-alt"></i>Dashboard</a>
             </li>
-            {% comment %}
-            <li class="{% if request.path == hom %}active{% endif %}">
-                <a href="{% url 'home' %}"><i class="fas fa-home"></i>Home</a>
-            </li>
-          {% endcomment %}
+
             <li class="{% if request.path == prof %}active{% endif %}">
                 <a href="{% url 'profile' %}"><i class="fas fa-user"></i>Profile</a>
             </li>

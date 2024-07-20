@@ -1,5 +1,7 @@
 
 from django.urls import path
+from django.conf.urls import handler404, handler500
+from django.shortcuts import render
 from .views import (
    home,
    jitsi_meet,
@@ -154,8 +156,20 @@ from .views import (
    professor_pdf,
    professors_pdf,
    students_pdf,
-   professor_video_call
+   professor_video_call,
+   error_404
 )
+
+def custom_page_not_found_view(request, exception):
+    return render(request, "404.html", {}, status=404 )
+
+handler404 = custom_page_not_found_view
+
+def custom_error_view(request):
+    return render(request, "500.html", {}, status=500)
+
+handler500 = custom_error_view
+
 
 urlpatterns = [
    path('', home, name='home'),
@@ -170,8 +184,8 @@ urlpatterns = [
    path('professor-video-call/<int:exam_id>/', professor_video_call, name='professor_video_call'),
    path('student/<int:student_id>/pdf/', student_pdf, name='student_pdf'),
    path('students/pdf/', students_pdf, name='students_pdf'),
-    path('professor/<int:professor_id>/pdf/', professor_pdf, name='professor_pdf'),
-    path('professors/pdf/', professors_pdf, name='professors_pdf'),
+   path('professor/<int:professor_id>/pdf/', professor_pdf, name='professor_pdf'),
+   path('professors/pdf/', professors_pdf, name='professors_pdf'),
 
 
    path('course/create/', course_create, name='course_create'),

@@ -52,7 +52,6 @@ def student_pdf(request, student_id):
     enrolled_courses = EnrolledCourse.objects.filter(student=user)
     courses = []
     for enrolled_course in enrolled_courses:
-        print(enrolled_course)
         courses.extend(Course.objects.filter(enrolled_course=enrolled_course))
   
     template_name = 'students/student_pdf.html'
@@ -230,7 +229,6 @@ def jitsi_meet(request):
     # decoded_token = jwt.decode(jwt_token, verify=False, algorithms=['RS256']) 
     decoded_token = jwt_token.decode("utf-8")
 
-    print(decoded_token)
     # jwt_token2='eyJraWQiOiJ2cGFhcy1tYWdpYy1jb29raWUtOTQzYzA4ODIxMjVkNGUzOGJlYmE3N2Q1YjM2MDkzYTcvZWIwOWViLVNBTVBMRV9BUFAiLCJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiJqaXRzaSIsImlzcyI6ImNoYXQiLCJpYXQiOjE3MTQ4NTQyNTEsImV4cCI6MTcxNDg2MTQ1MSwibmJmIjoxNzE0ODU0MjQ2LCJzdWIiOiJ2cGFhcy1tYWdpYy1jb29raWUtOTQzYzA4ODIxMjVkNGUzOGJlYmE3N2Q1YjM2MDkzYTciLCJjb250ZXh0Ijp7ImZlYXR1cmVzIjp7ImxpdmVzdHJlYW1pbmciOnRydWUsIm91dGJvdW5kLWNhbGwiOnRydWUsInNpcC1vdXRib3VuZC1jYWxsIjpmYWxzZSwidHJhbnNjcmlwdGlvbiI6dHJ1ZSwicmVjb3JkaW5nIjp0cnVlfSwidXNlciI6eyJoaWRkZW4tZnJvbS1yZWNvcmRlciI6ZmFsc2UsIm1vZGVyYXRvciI6dHJ1ZSwibmFtZSI6Im1hZGFyZHVjYWFsZTk5ODgiLCJpZCI6ImF1dGgwfDY2MzVkNTc4NjFhOTRkZGMzNjA2NzU5NCIsImF2YXRhciI6IiIsImVtYWlsIjoibWFkYXJkdWNhYWxlOTk4OEBnbWFpbC5jb20ifX0sInJvb20iOiIqIn0.TzxGx5krRc0AM7xKo0F5iHb6vZoGngmjj8uO-F-wHE_VTg9qVL_HS0nPuANP35jaiyZqJakWv3P2KZwCyCc49tCTk8XOc7MuHj7vWetKTdao-Kj_IC9gZipX2peBCeGWOdZe2gWQ-Skj2GT6-h90sl_D6916rdYonoKZBTwzjOOympJNh3YKAQ4DIbmiV4K34vgg2bY6wFRCBnVL5g5fQAbcVwIOIVco7gvJjCgukXwkho-wCRHl8VWJgDQKVVhBA-pGvsHU7v41kKLGRxyz6QK9FOfWML0mQikL7G9tOkj3tm0KXlUQESfUnDQbCpToZbsF9kzbMZBRPlELWP4-Ug'
     return render(request, 'udl_app/jitsi_meet.html', {'jwt_token': decoded_token})
 
@@ -1579,14 +1577,11 @@ def profile(request):
     user = request.user
     if user.is_professor:
         course_taught = Course.objects.filter(professors=user)
-        # print('course_taught:', course_taught)
         professor_avatar = Profile.objects.filter(user=user)
-        # print(professor_avatar.values())
         # messages.success(request, 'Profile  exists!')
         return render(request, 'registration/profile.html', {'user': user, 'course_taught': course_taught, 'professor_avatar': professor_avatar})
     elif user.is_student:
         student = get_object_or_404(Student, id=user.id)
-        print('student:', student)
         enrolled_courses = student.enrolled_student.all()
         student_avatar = Profile.objects.filter(user=user)
         # messages.success(request, 'Profile  exists!')
@@ -1780,7 +1775,7 @@ def student_list(request):
         school = School.objects.get(admin_school=admin)
         
         # Get students enrolled in courses that belong to the admin's school
-        students = Student.objects.filter(enrolled_student__course__school=school).distinct()
+        students = Student.objects.filter(school=school).distinct()
 
         # Retrieve profile pictures for students
         student_avatars = {student.id: Profile.objects.filter(user=student).first() for student in students}
@@ -2018,3 +2013,10 @@ def generate_pdf(request):
     p.showPage()
     p.save()
     return response
+
+
+# views.py
+def error_404(request, exception):
+    return render(request, '505_404.html', status=404)
+
+

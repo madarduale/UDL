@@ -38,14 +38,14 @@
     <div class="col-md-3 mx-auto">
         <div class="card  p-2">
             <div class="text-center">
-                {% if user.is_student %}
-                {% for profile in student_avatar %}
-                {% if profile.avatar %}
-                <img src="{{ profile.avatar.url }}" class="w-100">
-                {% else %}
-                    <img src="{% static 'img/University_of_Hargeisa1.svg' %}" class="w-100">
-                {% endif %}
-                {% endfor %}
+                    {% if user.is_student %}
+                    {% for profile in student_avatar %}
+                    {% if profile.avatar %}
+                    <img src="{{ profile.avatar.url }}" class="w-100">
+                    {% else %}
+                        <img src="{% static 'img/University_of_Hargeisa1.svg' %}" class="w-100">
+                    {% endif %}
+                    {% endfor %}
 
                 {% elif user.is_professor %}
                 {% for profile in professor_avatar %}
