@@ -27,7 +27,7 @@ COPY requirements.txt /app/
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy .env file
-COPY UDL_project/.env .env
+COPY .env .env
 
 # Copy the rest of the application code to the container
 COPY . /app/
