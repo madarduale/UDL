@@ -14,7 +14,7 @@ from .views import (
    course_edit,
    course_list,
    course_delete,
-   student__course_lectures,
+   student_course_lectures,
 
    school_create,
    school_detail,
@@ -80,6 +80,7 @@ from .views import (
    question_edit,
    question_list,
    question_delete,
+   get_questions,
 
    choice_create,
    choice_detail,
@@ -123,7 +124,7 @@ from .views import (
    zoom_meeting_list,
    zoom_meeting_delete,
 
-   message_create,
+#    message_create,
    message_detail,
    message_edit,
    message_list,
@@ -193,7 +194,7 @@ urlpatterns = [
    path('course/<int:pk>/edit/', course_edit, name='course_edit'),
    path('courses/', course_list, name='course_list'),
    path('course/<int:pk>/delete/', course_delete, name='course_delete'),
-   path('student/<int:pk>/courses/', student__course_lectures, name='student__course_lectures'),
+   path('student/<int:pk>/courses/', student_course_lectures, name='student_course_lectures'),
 
    path('school/create/', school_create, name='school_create'),
    path('school/<int:pk>/', school_detail, name='school_detail'),
@@ -259,6 +260,7 @@ urlpatterns = [
    path('question/<int:pk>/edit/', question_edit, name='question_edit'),
    path('questions/', question_list, name='question_list'),
    path('question/<int:pk>/delete/', question_delete, name='question_delete'),
+   path('ajax/get-questions/', get_questions, name='ajax_get_questions'),
 
    path('choice/create/', choice_create, name='choice_create'),
    path('choice/<int:pk>/', choice_detail, name='choice_detail'),
@@ -304,7 +306,7 @@ urlpatterns = [
    path('zoom_meetings/', zoom_meeting_list, name='zoom_meeting_list'),
    path('zoom_meeting/<int:pk>/delete/', zoom_meeting_delete, name='zoom_meeting_delete'),
 
-   path('message/create/', message_create, name='message_create'),
+#    path('message/create/', message_create, name='message_create'),
    path('message/<int:pk>/', message_detail, name='message_detail'),
    path('message/<int:pk>/edit/', message_edit, name='message_edit'),
    path('messages/', message_list, name='message_list'),

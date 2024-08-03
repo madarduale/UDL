@@ -18,7 +18,7 @@
     <ol class="breadcrumb">
       <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
  
-      <li class="breadcrumb-item active" aria-current="page">Exams</li>
+      <li class="breadcrumb-item active" aria-current="page">Choices</li>
     </ol>
 </nav>
 
@@ -36,7 +36,7 @@
     {% endfor %}
 {% endif %}
 
-<h2>Exams</h2>
+<h2>Choices</h2>
 {% if user.is_admin or user.is_professor %}
 <!-- Button trigger modal -->
 <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#exampleModal">
@@ -48,73 +48,15 @@
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="exampleModalLabel">Create Exam</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body">
-        <form method="POST" enctype="multipart/form-data">
-          {% csrf_token %}
-        {{ form | crispy }}
-            <a href="{% url 'exam_list' %}" class="btn btn-secondary">Cancel</a>
-          <button type="submit" class="btn btn-primary">Submit</button>
-        </form>
-      </div>
-      <!-- <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-        <button type="button" class="btn btn-primary">Save changes</button>
-      </div> -->
-    </div>
-  </div>
-</div>
-<a href="{% url 'exam_submission_list' %}" class="btn btn-primary" style="left: 48rem; position: relative;">submitted Exam</a>
-
-<!-- Button trigger modal -->
-<button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#exampleModal2">
-New Questions
-</button>
-
-<!-- Modal -->
-<div class="modal fade" id="exampleModal2" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="exampleModalLabel">Create Questions</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body">
-        <form method="POST" enctype="multipart/form-data">
-          {% csrf_token %}
-        {{ form3 | crispy }}
-            <a href="{% url 'exam_list' %}" class="btn btn-secondary">Cancel</a>
-          <button type="submit" class="btn btn-primary">Submit</button>
-        </form>
-      </div>
-      <!-- <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-        <button type="button" class="btn btn-primary">Save changes</button>
-      </div> -->
-    </div>
-  </div>
-</div>
-
-<!-- Button trigger modal -->
-<button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#exampleModal3">
- New Choices
-</button>
-
-<!-- Modal -->
-<div class="modal fade" id="exampleModal3" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
         <h5 class="modal-title" id="exampleModalLabel">Create Choices</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
         <form method="POST" enctype="multipart/form-data">
           {% csrf_token %}
-        {{ form4 | crispy }}
-            <a href="{% url 'exam_list' %}" class="btn btn-secondary">Cancel</a>
+          {{ form.media }}
+        {{ form | crispy }}
+            <a href="{% url 'choice_list' %}" class="btn btn-secondary">Cancel</a>
           <button type="submit" class="btn btn-primary">Submit</button>
         </form>
       </div>
@@ -125,76 +67,36 @@ New Questions
     </div>
   </div>
 </div>
+
+<!-- Button trigger modal -->
+
+
+
 {% endif %}
 
 {% if user.is_superuser %}
-<p> <a href="{% url 'exam_create'%}" class="btn btn-success">Exam create</a></p>
-{% endif %}
-
-{% if user.is_student %}
-<!-- Button trigger modal -->
-<button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#exampleModal">
-  Submit Exam
-</button>
-
-<!-- Modal -->
-<div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="exampleModalLabel">Submit Exam</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body">
-        <form method="POST" enctype="multipart/form-data">
-          {% csrf_token %}
-          {{ form2 | crispy }}
-            <a href="{% url 'exam_list' %}" class="btn btn-secondary">Cancel</a>
-          <button type="submit" class="btn btn-primary">Submit</button>
-        </form>
-      </div>
-      <!-- <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-        <button type="button" class="btn btn-primary">Save changes</button>
-      </div> -->
-    </div>
-  </div>
-</div>
+<p> <a href="{% url 'choice_create'%}" class="btn btn-success">Choices create</a></p>
 {% endif %}
 
 <br>
 <hr>
 
+{% if choices_grouped_by_question %}
+{% for question, choices in choices_grouped_by_question.items %}
+<h3>{{question.question | safe }}</h3>
 <ul class="list-group">
-    {% if exams %}
-          {% for exam in exams %}
-            {% if user.is_student %}
-            {% if exam.end_time < current_time %}
-            <li class="list-group-item" style="background-color: #e71e2f;">Exam Title: {{ exam.title }}(OVER)</li>
-            {% else %}
-            <li class="list-group-item active">Exam Title: {{exam.title}}</li>
-            {% endif %}
-            {% else %}
-            {% if exam.end_time < current_time %}
-            <li class="list-group-item" style="background-color: #e71e2f;">Exam Title: <a href="{% url 'exam_detail' exam.pk %}"  style="color: #721c24;">{{ exam.title }}<i class="fa fa-info-circle m-2" aria-hidden="true"></i>(OVER)</a></li>
-            {% else %}
-            <li class="list-group-item active">Exam Title: <a href="{% url 'exam_detail' exam.pk %}"  style="color: #ffff;">{{ exam.title }}<i class="fa fa-info-circle m-2" aria-hidden="true"></i></a></li>
-            {% endif %}
-            {% endif %}
-            <li class="list-group-item">description: {{exam.description}}</li>
-            <li class="list-group-item">Course: {{exam.course.title}}</li>
-            <li class="list-group-item">exam type: {{exam.exam_type}}</li>
-            <li class="list-group-item">start time: {{exam.start_time}}</li>
-            <li class="list-group-item">start time: {{exam.end_time}}</li>
-            {% endfor %}
-            {% else %}
-            <li class="list-group-item">No Exams</li>
-            {% endif %}
-            <br>
-            <br>
-            <hr>
-            <br>    
-            <br>
-        </ul>
+{% if choices %}
+{% for choice in choices %}
+<li class="list-group-item">Choices: {{choice.choice}}</li>
+<li class="list-group-item">Correct choice: {{choice.correct_choice}}</li>
+{% endfor %}
+{% else %}
+<li class="list-group-item">No Choices</li>
+{% endif %}
+</ul>
+{% endfor %}
+{% else %}
+<p>No Choices</p>
+{% endif %}
 
 {% endblock content %}

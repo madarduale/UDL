@@ -4,6 +4,7 @@
 <h2>New Assignment</h2>
 <form method="post">
     {% csrf_token %}
+    {{ form.media }}
     {{ form | crispy }}
     <button type="submit" class="btn btn-success">Save</button>
     <a href="{% url 'assignment_list' %}" class="btn btn-secondary">Cancel</a>

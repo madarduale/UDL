@@ -48,6 +48,7 @@
       <div class="modal-body">
         <form method="POST" enctype="multipart/form-data">
           {% csrf_token %}
+          {{ form.media }}
           {{ form | crispy }}
           <button type="submit" class="btn btn-primary">Submit</button>
         </form>
@@ -63,8 +64,8 @@
 <br>
 <br>
 
+{% if grouped_by_course %}
 {% if  user.is_student %}
-
 <div class="accordion " id="accordionExample">
   {% for course, lectures in grouped_by_course.items %}
     <div class="accordion-item shadow p-3 mb-3 bg-body rounded border border-warning">
@@ -113,7 +114,7 @@
                   <a href="{% url 'lecture_detail' lecture.pk %}">
                     {{ lecture.title }}
                 </a>
-                  {{lecture.description | truncatewords:10}}
+                  {{lecture.description | truncatewords:10 | safe }}
                   {% comment %}
                   {{lecture.description | first_line}}
                   {% endcomment %}
@@ -125,6 +126,11 @@
       </div>
       {% endfor %}
     </div>
-  {% endif %}
+    {% endif %}
+    {% else %}
+    <div class="alert alert-warning" style="width: 50%;  margin: auto;">
+      No lectures
+    </div>
+    {% endif %}
 
 {% endblock content %}

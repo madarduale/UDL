@@ -53,7 +53,7 @@
       <ul class="list-group mt-2">
           {% for answer in submission.answers %}
           <li class="list-group-item">
-              <strong>Question: {{ answer.question }}</strong> <br>
+              <strong>Question: {{ answer.question | safe }}</strong> <br>
               <strong>Marks: {{ answer.marks }}</strong> <br>
               <strong>Your Answer: {{ answer.answer }}</strong> <br>
               <strong>Correct Answer: {{ answer.correct_answer }}</strong> <br>

@@ -54,6 +54,7 @@
       <div class="modal-body">
         <form method="POST" enctype="multipart/form-data">
           {% csrf_token %}
+          {{ form.media }}
           {{ form.course | as_crispy_field }}
             {{ form.title | as_crispy_field }}
             {{ form.description | as_crispy_field }}
@@ -92,6 +93,7 @@
       <div class="modal-body">
         <form method="POST" enctype="multipart/form-data">
           {% csrf_token %}
+          {{ form2.media }}
           {{ form2 | crispy }}
             <a href="{% url 'assignment_list' %}" class="btn btn-secondary">Cancel</a>
           <button type="submit" class="btn btn-primary">Submit</button>
@@ -125,7 +127,7 @@
             <li class="list-group-item active">Assignments Title: <a href="{% url 'assignment_detail' assignment.pk %}"  style="color: #ffff;">{{ assignment.title }}<i class="fa fa-info-circle m-2" aria-hidden="true"></i></a></li>
             {% endif %}
             {% endif %}
-            <li class="list-group-item">description: {{assignment.description}}</li>
+            <li class="list-group-item">description: {{assignment.description |safe }}</li>
             <li class="list-group-item">Course: {{assignment.course.title}}</li>
             <li class="list-group-item">due date: {{assignment.due_date}}</li>
             {% if assignment.due_date > current_time %}

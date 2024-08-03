@@ -16,13 +16,14 @@
 
 
 <h2>Inbox</h2>
+<a href="{% url 'message_list' %}" class="btn btn-outline-primary" style="position: relative; left: 56rem; bottom: 2rem;"> My messages</a>
 {% for message, url in message_urls %}
   <div>
     <ul class="list-group">
       <li class="list-group-item bg-sub-info">Message ID: {{ message.id }}</li>
       <li class="list-group-item">Sender: {{ message.sender }}</li>
       <li class="list-group-item">Subject: {{ message.subject }}</li>
-      <li class="list-group-item">Content: {{ message.content }}</li>
+      <li class="list-group-item">Content: {{ message.content | safe }}</li>
       <li class="list-group-item">Sent at: {{ message.timestamp }}</li>
       {% if url %}
       <li class="list-group-item"><a href="{{ url }}" target="_blank" rel="noopener noreferrer">{{ url }}</a></li>

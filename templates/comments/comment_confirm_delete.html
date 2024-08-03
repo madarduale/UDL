@@ -1,0 +1,27 @@
+{% extends '../base.html' %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+    }
+    
+ h1, p{
+    color: #ff0000;
+ }
+</style>
+
+    <h1>Confirm Delete Comment</h1>
+    <p> Are your want delete "<strong>{{ comment.content | safe }}</strong> <p>"comment?</p></p>
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger">Delete Comment</button>
+        <button type="button" class="btn btn-secondary" onclick="window.location.href='{% url 'discussion_detail' discussion.pk %}'">Cancel</button>
+    </form>
+
+    
+{% endblock %}

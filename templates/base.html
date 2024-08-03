@@ -12,6 +12,7 @@
   <link rel="stylesheet" href="{% static 'bootstrap-icons-1.11.3/font/bootstrap-icons.css' %}">
   <link rel="icon" type="image/x-icon" href="{% static 'favicon_io/favicon.ico' %}">  
   <link rel="stylesheet" href="{% sass_src 'scss/styles.scss' %}">
+
 </head>
 <body>
   {% block sidebar %}
@@ -49,11 +50,12 @@
     <script src="https://kit.fontawesome.com/80d7ac95b2.js" crossorigin="anonymous"></script>
     <script type="text/javascript" src="{% static 'js/main.js' %}"></script>
     <script>
+        // javascript for selecting date and time in forms like exam start and end time
         flatpickr(".datetimepicker", {
             enableTime: true,
             dateFormat: "Y-m-d H:i",
         });
-
+//  javascript for checking if there is a new message to display some tags and icons, and hide some
         function checkUnreadMessages() {
             fetch('/messages/unread_count/')
                 .then(response => response.json())
@@ -61,16 +63,42 @@
                     if (data.unread_count > 0){
 
                         document.getElementById('btn1').style.display = 'block';
-                        unreaded = document.getElementById('unread-count').textContent =  data.unread_count;
-                        console.log(unreaded);
+                        document.getElementById('unread-count').textContent =  data.unread_count;
+                        document.getElementById('unreaded').style.display = 'block';
+                        document.getElementById('readed').style.display = 'none';
+
                     }
                     else{
                         document.getElementById('btn1').style.display = 'none';
+                        document.getElementById('unreaded').style.display = 'none';
+                        document.getElementById('readed').style.display = 'block';
                     }
                 });
         }
-
         setInterval(checkUnreadMessages, 60000);  // Check every minute
+
+        // jquery for filtering questions when selected course in exam creating 
+        $(document).ready(function() {
+            $('#id_course').change(function() {
+                var courseId = $(this).val();
+                // console.log('courseid: ', courseId)
+                $.ajax({
+                    url: '{% url "ajax_get_questions" %}',
+                    data: {
+                        'course_id': courseId
+                    },
+                    success: function(data) {
+                        var questionsSelect = $('#id_questions');
+                        // console.log('id', questionsSelect)
+                        // console.log("data", data)
+                        questionsSelect.empty();
+                        for (var i = 0; i < data.length; i++) {
+                            questionsSelect.append('<option value="' + data[i].id + '">' + data[i].question + '</option>');
+                        }
+                    }
+                });
+            });
+        });
 
     </script>
     {% block extrascripts %}{% endblock extrascripts %}

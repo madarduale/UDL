@@ -1,7 +1,7 @@
 from django import forms
 from django.utils import timezone
 from django.contrib.auth.forms import UserCreationForm, UserChangeForm
-
+from django.contrib.auth.models import Group
 from django.contrib.auth import get_user_model
 
 from django.db.models import Q
@@ -81,50 +81,116 @@ class SchoolForm(forms.ModelForm):
 
 
 
+# class MessageForm(forms.ModelForm):
+#     recipients = forms.ModelMultipleChoiceField(queryset=User.objects.none(), widget=forms.CheckboxSelectMultiple)
+
+#     class Meta:
+#         model = Message
+#         fields = ['recipients', 'subject', 'content', 'url']
+
+#     def __init__(self, *args, **kwargs):
+#         request = kwargs.pop('request', None)
+#         super(MessageForm, self).__init__(*args, **kwargs)
+        
+#         if request:
+#             if request.user.is_superuser:
+#                 self.fields['recipients'].queryset = User.objects.all()
+                
+#             elif request.user.is_admin:
+#                 admin = Admin.objects.get(id=request.user.id)
+#                 school = admin.school.first()  
+#                 if school:
+#                     self.fields['recipients'].queryset = User.objects.filter(student__school=school) | \
+#                                                         User.objects.filter(professor__school=school)
+#                 else:
+#                     self.fields['recipients'].queryset = User.objects.none()
+            
+#             elif request.user.is_professor:
+#                 professor = Professor.objects.get(id=request.user.id)
+#                 courses_taught = professor.courses_taught.all()
+#                 self.fields['recipients'].queryset = Student.objects.filter(enrolled_student__course__in=courses_taught).distinct()
+            
+#             elif request.user.is_student:
+#                 student = Student.objects.get(id=request.user.id)
+#                 courses = student.enrolled_student.all()
+#                 school = student.school.first() 
+#                 schools = student.school.all() 
+#                 enrolled_courses = EnrolledCourse.objects.filter(student=student)
+#                 courses = Course.objects.filter(enrolled_course__in=enrolled_courses)
+#                 professors = Professor.objects.filter(courses_taught__in=courses)
+#                 admins = Admin.objects.filter(school__in=schools)
+#                 self.fields['recipients'].queryset = BaseUser.objects.filter(Q(professor__in=professors) | Q(admin__in=admins))
+#                 # courses = Course.objects.filter(enrolled_course=enrolled_courses.first())
+#                 # if school:
+#                 #     for course in courses:
+#                 #         self.fields['recipients'].queryset = Professor.objects.filter(courses_taught=course).union(Admin.objects.filter(school=school))
+#                 #     # self.fields['recipients'].queryset = Professor.objects.filter(courses_taught__in=course) | \
+#                 #     #                                     Admin.objects.filter(admin__school=school)
+#                 # else:
+#                 #     self.fields['recipients'].queryset = User.objects.none()
+
 class MessageForm(forms.ModelForm):
-    recipients = forms.ModelMultipleChoiceField(queryset=User.objects.none(), widget=forms.CheckboxSelectMultiple)
+    students = forms.ModelMultipleChoiceField(
+        queryset=User.objects.none(),
+        widget=forms.CheckboxSelectMultiple,
+        required=False
+    )
+    professors = forms.ModelMultipleChoiceField(
+        queryset=User.objects.none(),
+        widget=forms.CheckboxSelectMultiple,
+        required=False
+    )
+    admins = forms.ModelMultipleChoiceField(
+        queryset=User.objects.none(),
+        widget=forms.CheckboxSelectMultiple,
+        required=False
+    )
 
     class Meta:
         model = Message
-        fields = ['recipients', 'subject', 'content', 'url']
+        fields = ['subject', 'content', 'url']
 
     def __init__(self, *args, **kwargs):
         request = kwargs.pop('request', None)
         super(MessageForm, self).__init__(*args, **kwargs)
         
         if request:
-            if request.user.is_admin:
+            student_group = Group.objects.get(name='Students')
+            professor_group = Group.objects.get(name='Professors')
+            admin_group = Group.objects.get(name='Admins')
+
+            if request.user.is_superuser:
+                self.fields['students'].queryset = User.objects.filter(groups=student_group)
+                self.fields['professors'].queryset = User.objects.filter(groups=professor_group)
+                self.fields['admins'].queryset = User.objects.filter(groups=admin_group)
+
+            elif request.user.is_admin:
                 admin = Admin.objects.get(id=request.user.id)
                 school = admin.school.first()  
                 if school:
-                    self.fields['recipients'].queryset = User.objects.filter(student__school=school) | \
-                                                        User.objects.filter(professor__school=school)
+                    self.fields['students'].queryset = User.objects.filter(student__school=school)
+                    self.fields['professors'].queryset = User.objects.filter(professor__school=school)
                 else:
-                    self.fields['recipients'].queryset = User.objects.none()
-            
+                    self.fields['students'].queryset = User.objects.none()
+                    self.fields['professors'].queryset = User.objects.none()
+
             elif request.user.is_professor:
                 professor = Professor.objects.get(id=request.user.id)
                 courses_taught = professor.courses_taught.all()
-                self.fields['recipients'].queryset = Student.objects.filter(enrolled_student__course__in=courses_taught).distinct()
+                self.fields['students'].queryset = User.objects.filter(groups=student_group, student__enrolled_student__course__in=courses_taught).distinct()
+                self.fields['admins'].queryset = User.objects.filter(groups=admin_group, admin__school=professor.school.first())
             
             elif request.user.is_student:
                 student = Student.objects.get(id=request.user.id)
-                courses = student.enrolled_student.all()
-                school = student.school.first() 
                 schools = student.school.all() 
                 enrolled_courses = EnrolledCourse.objects.filter(student=student)
                 courses = Course.objects.filter(enrolled_course__in=enrolled_courses)
-                professors = Professor.objects.filter(courses_taught__in=courses)
-                admins = Admin.objects.filter(school__in=schools)
-                self.fields['recipients'].queryset = BaseUser.objects.filter(Q(professor__in=professors) | Q(admin__in=admins))
-                # courses = Course.objects.filter(enrolled_course=enrolled_courses.first())
-                # if school:
-                #     for course in courses:
-                #         self.fields['recipients'].queryset = Professor.objects.filter(courses_taught=course).union(Admin.objects.filter(school=school))
-                #     # self.fields['recipients'].queryset = Professor.objects.filter(courses_taught__in=course) | \
-                #     #                                     Admin.objects.filter(admin__school=school)
-                # else:
-                #     self.fields['recipients'].queryset = User.objects.none()
+                self.fields['professors'].queryset = User.objects.filter(groups=professor_group, professor__courses_taught__in=courses).distinct()
+                self.fields['admins'].queryset = User.objects.filter(groups=admin_group, admin__school__in=schools).distinct()
+        if self.instance.pk:
+            self.fields['students'].initial = self.instance.recipients.filter(groups__name='Students')
+            self.fields['professors'].initial = self.instance.recipients.filter(groups__name='Professors')
+            self.fields['admins'].initial = self.instance.recipients.filter(groups__name='Admins')
 
 class CourseForm(forms.ModelForm):
     class Meta:
@@ -399,7 +465,7 @@ class EnrolledCourseForm(forms.ModelForm):
 class DiscussionForm(forms.ModelForm):
     class Meta:
         model = Discussion
-        fields = [ 'title', 'message']
+        fields = [ 'title', 'content']
 
 class CommentForm(forms.ModelForm):
     class Meta:
@@ -415,3 +481,7 @@ class ProfileForm(forms.ModelForm):
     class Meta:
         model = Profile
         fields = ['user', 'avatar', 'bio', 'location', 'birth_date', 'telephone']
+        widgets = {
+            'birth_date': forms.DateInput(attrs={'type':'date', 'format': '%d/%m/%Y'}),
+            'telephone': forms.TextInput(attrs={'placeholder': 'e.g. +25263xxxxxxx'}),
+        }

@@ -58,6 +58,7 @@ INSTALLED_APPS = [
     'accounts',
     'sass_processor',
     'embed_video',
+    'ckeditor',
 ]
 
 ASGI_APPLICATION = 'UDL_project.asgi.application'
@@ -82,6 +83,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'UDL_project.customMiddleWare.AdminAccessMiddleware',
     'UDL_project.customMiddleWare.AllowIframeFrom',
+    'UDL_project.customMiddleWare.OneSessionPerUserMiddleware',
 ]
 
 ROOT_URLCONF = 'UDL_project.urls'
@@ -278,3 +280,12 @@ LOGGING = {
         },
     },
 }
+
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'madard.edu@gmail.com'
+EMAIL_HOST_PASSWORD = 'uusg shlt bxki dmll'
+

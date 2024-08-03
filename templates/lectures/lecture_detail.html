@@ -9,7 +9,7 @@
       <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
       {% if user.is_student %}
       <li class="breadcrumb-item"><a href="{% url 'enrolled_course_list'  %}">Course list</a></li>
-      <li class="breadcrumb-item"><a href="{% url 'student__course_lectures' lecture.course.pk %}">Lecture list</a></li>
+      <li class="breadcrumb-item"><a href="{% url 'student_course_lectures' lecture.course.pk %}">Lecture list</a></li>
       {% else %}
     <li class="breadcrumb-item"><a href="{% url 'lecture_list' %}">lecture list</a></li>
       {% endif %}
@@ -98,18 +98,37 @@
     {% endif %}
     <li class="list-group-item"><h2>Lecture: {{ lecture.title }}</h2></li>
     <li class="list-group-item">Course: {{ lecture.course }}</li>
+    {% comment %}
     <li class="list-group-item">Video: 
       {% video lecture.video as my_video %}
-  {% comment %}
   Url: {{ my_video.url }}
   Thumbnail: {{ my_video.thumbnail }}
   Backend: {{ my_video.backend }}
-  {% endcomment %}
   {% video my_video "800x400" %}
+  {{ my_video.thumbnail }}
+  {{ my_video.backend }}
+  {{my_video.url}}
+  <iframe id="lecture-video" src="{{ my_video.url }}" frameborder="0" width="800" height="400" allowfullscreen></iframe>
   {% endvideo %}
-    </li>
-    <li class="list-group-item"><p class="text-break">description: {{ lecture.description }}</p></li>
+</li>
+  {% endcomment %}
+  <li class="list-group-item">
+    Video:
+    <div id="player-container">
+        <div id="player" style="border: solid 4px #37474F" ></div>
+        <div id="question-overlay" style="display: none;">
+            <h3>Question</h3>
+            <p id="question-text"></p>
+            <form id="question-form">
+                <input type="text" id="answer" placeholder="Your answer" required>
+                <button type="submit" class="btn btn-primary">Submit</button>
+            </form>
+        </div>
+    </div>
+</li>
+    <li class="list-group-item"><p class="text-break">description: {{ lecture.description | safe }}</p></li>
   </ul>
+
 </div>
 <hr>
 {% if user.is_student %}
@@ -119,7 +138,7 @@
   <button type="submit" class="btn btn-primary">Mark as incomplete </button>
 </form>
 {% else %}
-<form method="post" action="{% url 'complete_lecture' lecture.pk %}">
+<form method="post" action="{% url 'complete_lecture' lecture.pk %}"  id="complete-form" style="display: none;">
   {% csrf_token %}
   <button type="submit" class="btn btn-primary">Mark as complete</button>
 </form>
@@ -149,6 +168,7 @@
       <div class="modal-body">
         <form method="POST" enctype="multipart/form-data">
           {% csrf_token %}
+          {{ form.media }}
           {{ form | crispy }}
           <button type="submit" class="btn btn-primary">Submit</button>
         </form>
@@ -162,6 +182,153 @@
 </div>
 <a href="{% url 'lecture_delete' lecture.pk %}" class="btn btn-danger"><i class="fa fa-trash-o" aria-hidden="true"></i></a>
 {% endif %}
+<script>
 
+  console.log('video id');
+  {% video lecture.video as my_video %}
+var vidoe_url= "{{ my_video.url }}";
+var vidoe_id = vidoe_url.split("/")[4];
+var vidoe_id = vidoe_id.split("?")[0];
+console.log('video id');
+console.log(vidoe_id);
+  {% endvideo %}
+
+  var tag = document.createElement('script');
+        tag.src = "https://www.youtube.com/iframe_api";
+        var firstScriptTag = document.getElementsByTagName('script')[0];
+        firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+        var player;
+        var questions = [
+            { time: 30, question: "What is the main topic of this video?", answer: "topic" },
+            { time: 45, question: "What is the speaker's name?", answer: "name" },
+            { time: 60, question: "Can you explain the concept discussed at 0:50?", answer: "concept" }
+        ];
+        var nextQuestionIndex = 0;
+        var questionDisplayed = false;
+        var watchedIntervals = [];
+
+        function onYouTubeIframeAPIReady() {
+            player = new YT.Player('player', {
+                height: '400',
+                width: '800',
+                videoId: vidoe_id,
+                events: {
+                    'onStateChange': onPlayerStateChange,
+                    'onPlaybackRateChange': preventSkipping,
+                    'onError': handlePlayerError,
+                    'onReady': onPlayerReady
+                }
+            });
+        }
+
+        function onPlayerReady(event) {
+            setInterval(trackVideoProgress, 1000);
+            document.getElementById('player').style.borderColor = '#FF6D00';
+        }
+
+        function trackVideoProgress() {
+            if (player.getPlayerState() == YT.PlayerState.PLAYING) {
+                var currentTime = Math.floor(player.getCurrentTime());
+                if (!watchedIntervals.includes(currentTime)) {
+                    watchedIntervals.push(currentTime);
+                }
+                checkTime();
+            }
+        }
+
+        function changeBorderColor(playerStatus) {
+            var color;
+            if (playerStatus == -1) {
+              color = "#37474F"; // unstarted = gray
+            } else if (playerStatus == 0) {
+              color = "#FFFF00"; // ended = yellow
+            } else if (playerStatus == 1) {
+              color = "#33691E"; // playing = green
+            } else if (playerStatus == 2) {
+              color = "#DD2C00"; // paused = red
+            } else if (playerStatus == 3) {
+              color = "#AA00FF"; // buffering = purple
+            } else if (playerStatus == 5) {
+              color = "#FF6DOO"; // video cued = orange
+            }
+            if (color) {
+              document.getElementById('player').style.borderColor = color;
+            }
+        }
+
+        function preventSkipping(event) {
+            if (player.getPlaybackRate() > 1) {
+                player.setPlaybackRate(1);
+            }
+        }
+
+        function onPlayerStateChange(event) {
+            if (event.data == YT.PlayerState.ENDED) {
+                if (watchedIntervals.length >= player.getDuration()) {
+                    document.getElementById('complete-form').style.display = 'block';
+                }
+            } else if (event.data == YT.PlayerState.PLAYING) {
+                checkTime();
+            }
+            changeBorderColor(event.data);
+        }
+
+        function handlePlayerError(event) {
+            if (event.data == 100 || event.data == 101 || event.data == 150) {
+                alert("This video cannot be played.");
+            }
+        }
+
+        function checkTime() {
+            if (questionDisplayed) {
+                return;
+            }
+            var currentTime = player.getCurrentTime();
+            if (nextQuestionIndex < questions.length && currentTime >= questions[nextQuestionIndex].time) {
+                player.pauseVideo();
+                showQuestion(questions[nextQuestionIndex]);
+                nextQuestionIndex++;
+                questionDisplayed = true;
+            }
+        }
+
+        function showQuestion(question) {
+            document.getElementById('question-text').textContent = question.question;
+            document.getElementById('question-overlay').style.display = 'block';
+            document.getElementById('question-form').onsubmit = function(event) {
+                event.preventDefault();
+                var answer = document.getElementById('answer').value.trim().toLowerCase();
+                if (answer === question.answer.toLowerCase()) {
+                    document.getElementById('question-overlay').style.display = 'none';
+                    questionDisplayed = false;
+                    player.playVideo();
+                } else {
+                    alert("Incorrect answer. Please try again.");
+                }
+            };
+        }
+</script>
+
+<style>
+  #player-container {
+      position: relative;
+      width: 640px;
+      height: 390px;
+  }
+  #question-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.8);
+      color: white;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+  }
+</style>
 
 {% endblock content %}

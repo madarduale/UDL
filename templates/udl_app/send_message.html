@@ -5,9 +5,93 @@
 <h2>Send Message</h2>
 <form method="post">
     {% csrf_token %}
-  {{ form | crispy }}
-  <button class="btn btn-outline-success" type="submit">Send</button>
-  <a class="btn btn-success" href="{% url 'home' %}">Back</a>
+
+    <div>
+      
+      {% if request.user.is_superuser %}
+      <div class="btn-group" role="group" aria-label="Basic outlined example">
+        <button type="button" onclick="toggleRecipients('students')" class="btn btn-outline-primary">Show Students</button>
+        <button type="button" onclick="toggleRecipients('professors')"  class="btn btn-outline-primary">Show Professors</button>
+        <button type="button" onclick="toggleRecipients('admins')"  class="btn btn-outline-primary">Show Admins</button>
+      </div>
+      {% elif request.user.is_professor %}
+      <div class="btn-group" role="group" aria-label="Basic outlined example">
+        <button type="button" onclick="toggleRecipients('students')" class="btn btn-outline-primary">Show Students</button>
+        <button type="button" onclick="toggleRecipients('admins')"  class="btn btn-outline-primary">Show Admins</button>
+      </div>
+      {% elif request.user.is_student %}
+      <div class="btn-group" role="group" aria-label="Basic outlined example">
+        <button type="button" onclick="toggleRecipients('professors')" class="btn btn-outline-primary">Show Professors</button>
+        <button type="button" onclick="toggleRecipients('admins')"  class="btn btn-outline-primary">Show Admins</button>
+      </div>
+      {% elif request.user.is_admin %}
+      <div class="btn-group" role="group" aria-label="Basic outlined example">
+        <button type="button" onclick="toggleRecipients('students')" class="btn btn-outline-primary">Show Students</button>
+        <button type="button" onclick="toggleRecipients('professors')"  class="btn btn-outline-primary">Show Professors</button>
+      </div>
+      {% endif %}
+  </div>
+  <br>
+  <div id="students" style="display: none;">
+      <!-- <h3>Students</h3> -->
+      <ul class="list-group">
+        <li class="list-group-item active" aria-current="true">
+          {{ form.students.label_tag }}
+        </li>
+        <!-- <label></label> -->
+      <li class="list-group-item"><input type="checkbox" onclick="toggleSelectAll('students', this)"> Select All</li>
+      <li class="list-group-item">{{ form.students | as_crispy_field}}</li>
+      
+      </ul>
+  </div>
+  <div id="professors" style="display: none;">
+      <!-- <h3>Professors</h3> -->
+      <ul class="list-group">
+        <li class="list-group-item active" aria-current="true">
+          {{ form.professors.label_tag }}
+        </li>
+        <!-- <label></label> -->
+      <li class="list-group-item"><input type="checkbox" onclick="toggleSelectAll('professors', this)"> Select All</li>
+      <li class="list-group-item">{{ form.professors | as_crispy_field}}</li>
+      
+      </ul>
+  </div>
+  <div id="admins" style="display: none;">
+      <!-- <h3>Admins</h3> -->
+      <ul class="list-group">
+        <li class="list-group-item active" aria-current="true">
+          {{ form.admins.label_tag }}
+        </li>
+        <!-- <label></label> -->
+      <li class="list-group-item"><input type="checkbox" onclick="toggleSelectAll('admins', this)"> Select All</li>
+      <li class="list-group-item">{{ form.admins | as_crispy_field}}</li>
+      
+      </ul>
+  </div>
+
+    {{ form.media }}
+    {{ form.subject| as_crispy_field }} 
+    {{ form.content|as_crispy_field }}
+    {{ form.url|as_crispy_field }}
+
+    <button type="submit" class="btn btn-primary">Send</button>
 </form>
 
-{% endblock content %}
+<script>
+    function toggleRecipients(type) {
+        var recipientsDiv = document.getElementById(type);
+        if (recipientsDiv.style.display === "none") {
+            recipientsDiv.style.display = "block";
+        } else {
+            recipientsDiv.style.display = "none";
+        }
+    }
+
+    function toggleSelectAll(type, checkbox) {
+        var checkboxes = document.querySelectorAll('#' + type + ' input[type="checkbox"]');
+        for (var i = 0; i < checkboxes.length; i++) {
+            checkboxes[i].checked = checkbox.checked;
+        }
+    }
+</script>
+{% endblock %}

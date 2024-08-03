@@ -1,4 +1,6 @@
 from django import forms
+import random
+import string
 from django.contrib.auth.forms import UserCreationForm, UserChangeForm
 from udl_app.models import Admin, Student, Professor, BaseUser
 from crispy_forms.helper import FormHelper
@@ -7,7 +9,7 @@ from udl_app.models import School
 
 # class LoginForm(forms.Form):
     
-class AdminSignupForm(UserCreationForm):
+class AdminSignupForm(forms.ModelForm):
     class Meta:
         model=Admin
         fields = [
@@ -23,8 +25,8 @@ class AdminSignupForm(UserCreationForm):
         super().__init__(*args, **kwargs)
         self.fields['username'].help_text = ''  
         self.fields['email'].help_text = '' 
-        self.fields['password1'].help_text = '' 
-        self.fields['password2'].help_text = '' 
+        # self.fields['password1'].help_text = '' 
+        # self.fields['password2'].help_text = '' 
         self.fields['school'].help_text = '' 
         self.fields['is_admin'].help_text = '' 
         self.fields['is_active'].help_text = '' 
@@ -44,7 +46,7 @@ class AdminEditForm(UserChangeForm):
             # "is_staff",
         ]
 
-class StudentSignupForm(UserCreationForm):
+class StudentSignupForm(forms.ModelForm):
     class Meta:
         model=Student
         fields = [
@@ -65,8 +67,7 @@ class StudentSignupForm(UserCreationForm):
         self.fields['email'].help_text = '' 
         self.fields['school'].help_text = '' 
         self.fields['UID'].help_text = '' 
-        self.fields['password1'].help_text = '' 
-        self.fields['password2'].help_text = '' 
+        # self.fields['password2'].help_text = '' 
         self.fields['is_student'].help_text = '' 
         self.fields['is_active'].help_text = '' 
 
@@ -75,8 +76,7 @@ class StudentSignupForm(UserCreationForm):
         elif user.is_admin:
             admin = Admin.objects.get(username=user)
             self.fields['school'].queryset = School.objects.filter(admin_school=admin)
-
-
+    
 class StudentEditForm(UserChangeForm):
     class Meta:
         model=Student
@@ -107,7 +107,7 @@ class StudentEditForm(UserChangeForm):
             admin = Admin.objects.get(username=user)
             self.fields['school'].queryset = School.objects.filter(admin_school=admin)
 
-class ProfessorSignupForm(UserCreationForm):
+class ProfessorSignupForm(forms.ModelForm):
     class Meta:
         model=Professor
         fields = [
@@ -125,8 +125,8 @@ class ProfessorSignupForm(UserCreationForm):
         self.fields['username'].help_text = ''  
         self.fields['email'].help_text = '' 
         self.fields['school'].help_text = '' 
-        self.fields['password1'].help_text = '' 
-        self.fields['password2'].help_text = '' 
+        # self.fields['password1'].help_text = '' 
+        # self.fields['password2'].help_text = '' 
         self.fields['is_active'].help_text = ''
         self.fields['is_professor'].help_text = ''
 

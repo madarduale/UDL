@@ -1,11 +1,16 @@
 <ul>
     {% for reply in comment.replies.all %}
       <li>
-        <p>{{ reply.author.username }}: {{ reply.content }} on {{ reply.created_at }}</p>
-        <a href="#" onclick="document.getElementById('reply-form-{{ reply.id }}').style.display='block';">Reply</a>
+        <p>{{ reply.author.username }}: {{ reply.content | safe }} on {{ reply.created_at }}</p>
+        <a href="#" onclick="document.getElementById('reply-form-{{ reply.id }}').style.display='block';" class="btn btn-outline-info">Reply</a>
+        {% if reply.author == user %}
+        <a href="{% url 'comment_edit' reply.pk %}" class="btn btn-primary btn-sm"><i class="bi bi-pencil-square" aria-hidden="true"></i></a>
+        <a href="{% url 'comment_delete' reply.pk %}" class="btn btn-danger btn-sm"><i class="bi bi-trash" aria-hidden="true"></i></a>
+        {% endif %}
         <div id="reply-form-{{ reply.id }}" style="display:none;">
           <form method="post" action="{% url 'discussion_detail' discussion.pk %}">
             {% csrf_token %}
+            {{ form.media }}
             {{ comment_form.as_p }}
             <input type="hidden" name="parent" value="{{ reply.id }}">
             <button type="submit" class="btn btn-secondary">Post Reply</button>

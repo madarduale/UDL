@@ -1,11 +1,12 @@
 {% extends '../base.html' %}
 {% load crispy_forms_tags %}
 {% block content %}
-<h2>Edite Exam</h2>
+<h2>Edite Question</h2>
 <form method="post">
     {% csrf_token %}
+    {{ form.media }}
     {{ form | crispy }}
     <button type="submit" class="btn btn-success">Save</button>
-    <a href="{% url 'exam_detail' exam.pk %}" class="btn btn-secondary">Cancel</a>
+    <a href="{% url 'question_detail' question.pk %}" class="btn btn-secondary">Cancel</a>
 </form>
 {% endblock content %}

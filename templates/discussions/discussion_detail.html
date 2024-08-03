@@ -2,21 +2,55 @@
 {% load crispy_forms_tags %}
 
 {% block content %}
+<nav style="--bs-breadcrumb-divider: '>';" aria-label="breadcrumb">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href=" {% url 'dashboard' %}">Dashboard</a></li>
+    <li class="breadcrumb-item"><a href=" {% url 'discussion_list' %}">Discussions</a></li>
+
+    <li class="breadcrumb-item active" aria-current="page">Discussion Detail</li>
+  </ol>
+</nav>
+
+{% if messages %}
+    {% for message in messages %}
+      {% if message.tags == 'error' %}
+          <div class="alert alert-danger" style="width: 50%;  margin: auto;">
+              {{ message }}
+          </div>
+      {%else %}
+          <div class="alert alert-{{ message.tags }}" style="width: 50%;  margin: auto;">
+              {{ message }}
+          </div>
+      {% endif %}
+    {% endfor %}
+{% endif %}
+
 <ul class="list-group">
     <li class="list-group-item active" aria-current="true">{{ discussion.title }}</li>
-    <li class="list-group-item"><strong>{{ discussion.message }}</strong></li>
+    <li class="list-group-item"><strong>{{ discussion.content | safe }}</strong></li>
     <li class="list-group-item">Started by {{ discussion.starter.username }} on {{ discussion.created_at }}</li>
+    {% if discussion.starter == user %}
+    <li class="list-group-item">
+      <a href="{% url 'discussion_edit' discussion.pk %}" class="btn btn-primary">Edit</a>
+      <a href="{% url 'discussion_delete' discussion.pk %}" class="btn btn-danger">Delete</a>
+  </li>
+  {% endif %}
     <li class="list-group-item"></li>
     <li class="list-group-item">
         <h2>Comments</h2>
   <ul>
     {% for comment in comments %}
       <li>
-        <p>{{ comment.author.username }}: {{ comment.content }} on {{ comment.created_at }}</p>
-        <a href="#" onclick="document.getElementById('reply-form-{{ comment.id }}').style.display='block';">Reply</a>
+        <p>{{ comment.author.username }}: {{ comment.content | safe }} on {{ comment.created_at }}</p>
+        <a href="#" onclick="document.getElementById('reply-form-{{ comment.id }}').style.display='block';" class="btn btn-outline-info">reply</a>
+        {% if comment.author == user %}
+        <a href="{% url 'comment_edit' comment.pk %}" class="btn btn-primary btn-sm"><i class="bi bi-pencil-square"></i></a>
+        <a href="{% url 'comment_delete' comment.pk %}" class="btn btn-danger btn-sm"><i class="bi bi-trash"></i></a>
+        {% endif %}
         <div id="reply-form-{{ comment.id }}" style="display:none;">
           <form method="post" action="{% url 'discussion_detail' discussion.pk %}">
             {% csrf_token %}
+            {{ form.media }}
             {{ comment_form | crispy}}
             <input type="hidden" name="parent" value="{{ comment.id }}">
             <button type="submit" class="btn btn-secondary">Post Reply</button>
@@ -30,6 +64,7 @@
   <h3>Add a new comment</h3>
   <form method="post" action="{% url 'discussion_detail' discussion.pk %}">
     {% csrf_token %}
+    {{ form.media }}
     {{ comment_form | crispy }}
     <button type="submit" class="btn btn-secondary">Post Comment</button>
   </form>

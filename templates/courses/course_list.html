@@ -12,7 +12,7 @@
     border-radius: 10px;
     box-shadow: 10px 10px 5px 5px #0d6efd;
     width: 15rem;
-    height: 35rem;
+    height: 38rem;
   }
   .card:hover{
     box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2);
@@ -105,7 +105,7 @@
     <img src="{{course.image.url}}" class="card-img-top" alt="course image", width="50%", height="200vh">
     <div class="card-body">
       <h5 class="card-title"><a href="{% url 'course_detail' course.pk %}">{{ course.title }}<i class="fa fa-info-circle" aria-hidden="true"></i></a></h5>
-      <p class="card-text">Description: {{course.description | truncatewords:5}}</p>
+      <p class="card-text">Description: {{course.description | truncatewords:5 | safe }}</p>
       <ul class="list-group list-group-flush">
         <li class="list-group-item">Code: {{course.code}}</li>
         <li class="list-group-item">School: {{course.school}}</li>
@@ -138,6 +138,7 @@
       <div class="modal-body">
         <form method="POST" enctype="multipart/form-data">
           {% csrf_token %}
+          {{ form.media }}
           {{ form | crispy }}
           <button type="submit" class="btn btn-primary">Submit</button>
         </form>
@@ -165,7 +166,7 @@
     <img src="{{course.image.url}}" class="card-img-top" alt="course image", width="50%", height="200vh">
     <div class="card-body">
       <h5 class="card-title"><a href="{% url 'course_detail' course.pk %}">{{ course.title }}<i class="fa fa-info-circle" aria-hidden="true"></i></a></h5>
-      <p class="card-text">Description: {{course.description | truncatewords:5 }}</p>
+      <p class="card-text">Description: {{course.description | truncatewords:5 | safe }}</p>
     </div>
     <ul class="list-group list-group-flush border border-primary">
       <li class="list-group-item border border-warning">Code: {{course.code}}</li>
@@ -197,7 +198,7 @@
         <img src="{{course.image.url}}" class="card-img-top" alt="course image", width="50%", height="200vh">
         <div class="card-body">
           <h5 class="card-title"><a href="{% url 'course_detail' course.pk %}">{{ course.title }}<i class="fa fa-info-circle" aria-hidden="true"></i></a></h5>
-          <p class="card-text">Description: {{course.description | truncatewords:5 }}</p>
+          <p class="card-text">Description: {{course.description | safe | truncatewords:5 }}</p>
         </div>
         <ul class="list-group list-group-flush border border-primary">
           <li class="list-group-item">Code: {{course.code}}</li>
@@ -228,7 +229,7 @@
     <img src="{{course.image.url}}" class="card-img-top" alt="course image" width="50%" height="200vh">
     <div class="card-body">
       <h5 class="card-title">Title: {{ course.title }}</h5>
-      <p class="card-text">Description: {{course.description | truncatewords:5 }}</p>
+      <p class="card-text">Description: {{course.description | truncatewords:5 | safe }}</p>
     </div>
     <ul class="list-group list-group-flush border border-primary">
       <li class="list-group-item">Code: {{course.code}}</li>

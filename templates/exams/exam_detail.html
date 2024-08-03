@@ -47,7 +47,7 @@
  <a href="{% url 'question_list' %}" class="btn btn-primary">Questions</a>
 <a href="{% url 'choice_list' %}" class="btn btn-primary">Choices</a>
 <a href="{% url 'professor_video_call' exam.pk %}" class="btn btn-primary">Join Video Call</a>
-<a href="{% url 'exam_submission_list_by_id' exam.pk %}" class="btn btn-primary" style="left: 43rem; position: relative;">submitted Exam</a>
+<a href="{% url 'exam_submission_list_by_id' exam.pk %}" class="btn btn-primary" style="left: 35rem; position: relative;">submitted Exam</a>
 
 {% endif %}
 
@@ -55,7 +55,7 @@
 <hr>
 
 {% if not user.is_student %}
-<a href="{% url 'video_call' %}">start videe call</a>
+
 <ul class="list-group">
     
             {% if exam.end_time < current_time %}
@@ -64,13 +64,13 @@
             <li class="list-group-item active">Exam Title: {{ exam.title }}</li>
             {% endif %}
   
-            <li class="list-group-item">Description: {{exam.description}}</li>
+            <li class="list-group-item">Description: {{exam.description | safe }}</li>
             <li class="list-group-item">Course: {{exam.course.title}}</li>
             <li class="list-group-item">Course: {{exam.exam_type}}</li>
             <li class="list-group-item">Start Time: {{exam.start_time}}</li>
             <li class="list-group-item">End Time: {{exam.end_time}}</li>
             {% for question in exam.questions.all %}
-            <li class="list-group-item">Question: {{question.question}}</li>
+            <li class="list-group-item">Question: {{question.question| safe }}</li>
             {% for choice in question.choices.all %}
             <li class="list-group-item">Choice: {{choice.choice}}</li>
             <l class="list-group-item">Correct Answer: {{choice.correct_choice}}</l>
@@ -128,7 +128,7 @@
             {% else %}  
             <li class="list-group-item active">Exam Title: {{ exam.title }}</li>
             {% endif %}
-            <li class="list-group-item">Description: {{exam.description}}</li>
+            <li class="list-group-item">Description: {{exam.description | safe }}</li>
             <li class="list-group-item">Course: {{exam.course.title}}</li>
             <li class="list-group-item">Course: {{exam.exam_type}}</li>
             <li class="list-group-item">Start Time: {{exam.start_time}}</li>

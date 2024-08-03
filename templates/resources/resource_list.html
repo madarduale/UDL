@@ -140,7 +140,7 @@
     {% endif %}
     <div class="card-body">
       <h5 class="card-title"><a href="{% url 'resource_detail' resource.pk %}">{{ resource.title }}<i class="fa fa-info-circle" aria-hidden="true"></i></a></h5>
-      <p class="card-text">description: {{resource.description}}</p>
+      
     </div>
     <ul class="list-group list-group-flush">
       {% for lecture in resource.lecture.all %}
@@ -206,7 +206,7 @@
     {% endif %}
     <div class="card-body">
       <h5 class="card-title"><a href="{% url 'resource_detail' resource.pk %}">{{ resource.title }}<i class="fa fa-info-circle" aria-hidden="true"></i></a></h5>
-      <p class="card-text">description: {{resource.description}}</p>
+
     </div>
     <ul class="list-group list-group-flush border border-primary">
       {% for lecture in resource.lecture.all %}
@@ -273,7 +273,6 @@
     {% endif %}
         <div class="card-body">
           <h5 class="card-title"><a href="{% url 'resource_detail' resource.pk %}">{{ resource.title }}<i class="fa fa-info-circle" aria-hidden="true"></i></a></h5>
-          <p class="card-text">description: {{resource.description}}</p>
         </div>
         <ul class="list-group list-group-flush border border-primary">
           {% for lecture in resource.lecture.all %}

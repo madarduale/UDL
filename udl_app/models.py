@@ -1,4 +1,4 @@
-
+import bleach
 from django.db import models
 from django.conf import settings
 from django.contrib.auth.models import AbstractUser
@@ -9,6 +9,8 @@ from django.utils.translation import gettext_lazy as _
 from django.db.models import Q
 from django.urls import reverse
 from embed_video.fields import EmbedVideoField
+from ckeditor.fields import RichTextField
+from bs4 import BeautifulSoup
 
 # Create your models here.
 
@@ -50,6 +52,7 @@ class BaseUser(AbstractUser):
     is_professor = models.BooleanField(default=False)
     is_student = models.BooleanField(default=False)
     is_admin = models.BooleanField(default=False)
+    current_session_key = models.CharField(max_length=40, blank=True, null=True)
 
     class Meta:
         verbose_name = 'User'
@@ -124,7 +127,8 @@ class Semester(models.Model):
 class Course(models.Model):
     code = models.CharField(max_length=20, unique=True)
     title = models.CharField(max_length=255)
-    description = models.TextField(blank=True, null=True)
+    # description = models.TextField(blank=True, null=True)
+    description = RichTextField(blank=True, null=True)
     semester = models.ForeignKey(Semester, on_delete=models.CASCADE, related_name='courses')
     school = models.ForeignKey(School, on_delete=models.CASCADE, related_name='courses_school')
     professors = models.ManyToManyField(Professor, related_name='courses_taught')
@@ -140,13 +144,23 @@ class Course(models.Model):
 class Lecture(models.Model):
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='lectures')
     title = models.CharField(max_length=255)
-    description = models.TextField(blank=True, null=True)
+    # description = models.TextField(blank=True, null=True)
+    description = RichTextField(blank=True, null=True)
     date = models.DateTimeField(auto_now_add=True)
     video = EmbedVideoField(blank=True, null=True)
+    
 
     def __str__(self):
         return self.title
 
+class LectureQuestions(models.Model):
+    lecture = models.ForeignKey(Lecture, on_delete=models.CASCADE, related_name='lecture_questions')
+    question = models.CharField(max_length=255)
+    answer = models.CharField(max_length=255)
+    time = models.FloatField(default=0, blank=True, null=True, help_text="Time in minutes eg. 1.5, 2, 2.1, 3.9")
+
+    def __str__(self):
+        return self.question
 class LectureProgress(models.Model):
     student = models.ForeignKey(Student, on_delete=models.CASCADE)
     lecture = models.ForeignKey(Lecture, on_delete=models.CASCADE)
@@ -158,7 +172,8 @@ class LectureProgress(models.Model):
 class Assignment(models.Model):
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='assignments')
     title = models.CharField(max_length=255)
-    description = models.TextField()
+    # description = models.TextField()
+    description = RichTextField(blank=True, null=True)
     due_date = models.DateTimeField()
     file = models.FileField(upload_to='assigments/', blank=True, null=True)
     objects = CustomeManager()
@@ -188,7 +203,8 @@ class Exam(models.Model):
     ]
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='exams')
     title = models.CharField(max_length=255)
-    description = models.TextField()
+    # description = models.TextField()
+    description = RichTextField(blank=True, null=True)
     exam_type = models.CharField(max_length=10, choices=EXAM_TYPE_CHOICES, default='Midterm')
     start_time = models.DateTimeField()
     end_time = models.DateTimeField()
@@ -238,7 +254,8 @@ class AssignmentGrade(Grade):
 
 class Question(models.Model):
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='questions')
-    question = models.TextField()
+    # question = models.TextField()
+    question = RichTextField()
     marks = models.FloatField(default=1)
     QUESTION_TYPES = [
         ('MCQ', 'Multiple Choice'),
@@ -248,8 +265,15 @@ class Question(models.Model):
     ]
     question_type = models.CharField(max_length=3, choices=QUESTION_TYPES, default='MCQ')
 
+    def save(self, *args, **kwargs):
+        allowed_tags = list(bleach.sanitizer.ALLOWED_TAGS) + ['p', 'br', 'span', 'div', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'u', 's', 'sub', 'sup', 'b', 'i', 'strong', 'em', 'mark', 'small', 'del', 'ins', 'kbd', 'code', 'samp', 'var', 'pre', 'blockquote', 'abbr', 'acronym', 'address', 'bdo', 'q', 'cite', 'dfn', 'ruby', 'rt', 'rp', 'data', 'time', 'table', 'caption', 'colgroup', 'col', 'thead', 'tfoot', 'tbody', 'tr', 'th', 'td', 'figure', 'figcaption', 'img', 'video', 'audio', 'source', 'track', 'map', 'area', 'a', 'link', 'ul', 'ol', 'li', 'dl', 'dt', 'dd', 'nav', 'section', 'article', 'aside', 'header', 'footer', 'main', 'address', 'div', 'span', 'button', 'input', 'label', 'select', 'datalist', 'optgroup', 'option', 'textarea', 'form', 'fieldset', 'legend', 'details', 'summary', 'progress', 'meter', 'hr', 'menu', 'menuitem', 'dialog', 'script', 'noscript', 'template', 'slot', 'canvas', 'svg', 'math', 'style', 'iframe', 'object', 'embed', 'param', 'picture', 'source', 'track', 'area', 'base', 'basefont', 'br', 'col', 'frame', 'hr', 'img', 'input', ' isindex', 'link', 'meta', 'param']
+        self.question = bleach.clean(self.question, tags=allowed_tags)
+        super(Question, self).save(*args, **kwargs)
+
     def __str__(self):
-        return self.question
+        question = BeautifulSoup(self.question, 'html.parser').get_text()
+        return question[:50] + ('...' if len(question) > 50 else '')
+        # return question
 
 class Choice(models.Model):
     question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='choices')
@@ -283,7 +307,8 @@ class Discussion(models.Model):
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='discussions')
     title = models.CharField(max_length=255)
     starter = models.ForeignKey(BaseUser, on_delete=models.CASCADE, related_name='discussions_started')
-    message = models.TextField()
+    # content = models.TextField()
+    content = RichTextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     objects = DiscussionManager()
     def __str__(self):
@@ -297,7 +322,8 @@ class Comment(models.Model):
     discussion = models.ForeignKey(Discussion, on_delete=models.CASCADE, related_name='comments')
     parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='replies')
     author = models.ForeignKey(BaseUser, on_delete=models.CASCADE)
-    content = models.TextField()
+    # content = models.TextField()
+    content = RichTextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     likes = models.ManyToManyField(BaseUser, related_name='liked_comments', blank=True)
 
@@ -315,6 +341,16 @@ class Profile(models.Model):
 
     def __str__(self):
         return f"{self.user.username}'s profile"
+
+
+@receiver(post_save, sender=BaseUser)
+def create_user_profile(sender, instance, created, **kwargs):
+    if created:
+        Profile.objects.create(user=instance)
+
+@receiver(post_save, sender=BaseUser)
+def save_user_profile(sender, instance, **kwargs):
+    instance.profile.save()
 
 
 @receiver(post_save, sender=Admin)
@@ -365,11 +401,18 @@ class Message(models.Model):
     sender = models.ForeignKey(BaseUser, on_delete=models.CASCADE, related_name='sended_messages')
     recipients = models.ManyToManyField(BaseUser, related_name='received_messages')
     subject = models.CharField(max_length=100)
-    content = models.TextField()
+    # content = models.TextField()
+    content = RichTextField(blank=True, null=True)
     url = models.URLField(max_length=200, blank=True, null=True)
     timestamp = models.DateTimeField(auto_now_add=True)
     is_read = models.BooleanField(default=False)
     objects = MessageManager()
+
+    def save(self, *args, **kwargs):
+        allowed_tags = list(bleach.sanitizer.ALLOWED_TAGS) + ['p', 'br', 'span', 'div', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'u', 's', 'sub', 'sup', 'b', 'i', 'strong', 'em', 'mark', 'small', 'del', 'ins', 'kbd', 'code', 'samp', 'var', 'pre', 'blockquote', 'abbr', 'acronym', 'address', 'bdo', 'q', 'cite', 'dfn', 'ruby', 'rt', 'rp', 'data', 'time', 'table', 'caption', 'colgroup', 'col', 'thead', 'tfoot', 'tbody', 'tr', 'th', 'td', 'figure', 'figcaption', 'img', 'video', 'audio', 'source', 'track', 'map', 'area', 'a', 'link', 'ul', 'ol', 'li', 'dl', 'dt', 'dd', 'nav', 'section', 'article', 'aside', 'header', 'footer', 'main', 'address', 'div', 'span', 'button', 'input', 'label', 'select', 'datalist', 'optgroup', 'option', 'textarea', 'form', 'fieldset', 'legend', 'details', 'summary', 'progress', 'meter', 'hr', 'menu', 'menuitem', 'dialog', 'script', 'noscript', 'template', 'slot', 'canvas', 'svg', 'math', 'style', 'iframe', 'object', 'embed', 'param', 'picture', 'source', 'track', 'area', 'base', 'basefont', 'br', 'col', 'frame', 'hr', 'img', 'input', ' isindex', 'link', 'meta', 'param']
+        self.content = bleach.clean(self.content, tags=allowed_tags)
+        super(Message, self).save(*args, **kwargs)
+
 
     def __str__(self):
         return self.subject

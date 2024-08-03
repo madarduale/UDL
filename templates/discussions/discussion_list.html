@@ -8,10 +8,6 @@
     padding: 0;
   }
 
-  h1 {
-    color: #333;
-    text-align: center;
-  }
 
   ul {
     list-style-type: none;
@@ -22,13 +18,28 @@
     margin: 10px 0;
   }
 </style>
+
+
+<nav style="--bs-breadcrumb-divider: '>';" aria-label="breadcrumb">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href=" {% url 'dashboard' %}">Dashboard</a></li>
+  
+    <li class="breadcrumb-item active" aria-current="page">Discussions</li>
+  </ol>
+</nav>
+
   <h1>Discussions</h1>
+  
+  {% if discussions %}
   <ul>
     {% for discussion in discussions %}
-      <li>
-        <a href="{% url 'discussion_detail' discussion.pk %}">{{ discussion.title }}</a>
-        by {{ discussion.starter.username }} on {{ discussion.created_at }}
-      </li>
+    <li>
+      <a href="{% url 'discussion_detail' discussion.pk %}">{{ discussion.title }}</a>
+      by {{ discussion.starter.username }} on {{ discussion.created_at }}
+    </li>
     {% endfor %}
   </ul>
+  {% else %}
+  <p>No discussions yet.</p>
+  {% endif %}
 {% endblock %}

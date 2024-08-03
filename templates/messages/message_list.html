@@ -1,0 +1,47 @@
+{% extends '../base.html' %}
+{% block content %}
+{% if messages %}
+    {% for message in messages %}
+      {% if message.tags == 'error' %}
+          <div class="alert alert-danger" style="width: 50%;  margin: auto;">
+              {{ message }}
+          </div>
+      {%else %}
+          <div class="alert alert-{{ message.tags }}" style="width: 50%;  margin: auto;">
+              {{ message }}
+          </div>
+      {% endif %}
+    {% endfor %}
+{% endif %}
+    <h1>Messages</h1>
+  
+    <a href="{% url 'send_message' %}" class="btn btn-outline-secondary">Create a new message</a>
+    <hr>
+    <div>
+        <ul class="list-group">
+            
+            {% if messages_list %}
+                
+            
+            {% for message in messages_list %}
+            <li class="list-group-item bg-sub-info"><a href="{% url 'message_detail' message.pk %}">Message ID: {{ message.id }} <i class="fa fa-info" aria-hidden="true"></i></a></li>
+            <li class="list-group-item">Sender: {{ message.sender }}</li>           
+           
+            <li class="list-group-item">Subject: {{ message.subject }}</li>
+
+            
+            {% if message.url %}
+            <li class="list-group-item"><a href="{{ message.url }}" target="_blank" rel="noopener noreferrer">{{ message.url }}</a></li>
+            {% else %}
+                <li class="list-group-item">No URL</li>                
+                {% endif %}
+                
+                {% endfor %}
+                
+            </ul>
+            {% else %}
+            <li class="list-group-item">No messages</li>
+            
+            {% endif %}
+    </div>
+{% endblock %}

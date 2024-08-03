@@ -7,7 +7,7 @@ Lecture,
 Question, Exam, ExamGrading, ExamSubmission,
  Assignment, AssignmentGrade, AssignmentSubmission, Grade, 
  Discussion, Message, Resource, Choice, Comment, ZoomMeeting,
- Semester,
+ Semester, LectureQuestions, LectureProgress,
 
 ) 
 # Register your models here.
@@ -48,4 +48,7 @@ admin.site.register(Choice)
 admin.site.register(Comment)
 admin.site.register(ZoomMeeting)
 admin.site.register(Semester)
+admin.site.register(LectureQuestions)
+admin.site.register(LectureProgress)
+
 

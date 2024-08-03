@@ -38,7 +38,8 @@ from .models import(
 from .decorators import(
 admin_required, professor_required, student_required, 
 admin_or_professor_required, admin_or_professor_or_student_required, 
-admin_or_superuser_required, superuser_required,
+admin_or_superuser_required, superuser_required, admin_or_superuser_or_professor_required,
+admin_or_superuser_or_profeesor_or_student_required,
 )
 
 
@@ -214,7 +215,7 @@ def generate_jwt(user):
         .withApiKey("vpaas-magic-cookie-943c0882125d4e38beba77d5b36093a7/45e73f") \
         .withUserName(user.username) \
         .withUserEmail(user.email) \
-        .withModerator(user.is_staff) \
+        .withModerator(user.is_admin or user.is_professor) \
         .withAppID("vpaas-magic-cookie-943c0882125d4e38beba77d5b36093a7") \
         .withUserAvatar(user.profile.avatar.url if user.profile.avatar else '') \
         .signWith(private_key)
@@ -239,19 +240,34 @@ def send_message(request):
         form = MessageForm(request.POST, request=request)
         if form.is_valid():
             message = form.save(commit=False)
-            recipients = form.cleaned_data['recipients']
+            recipients = None
+            students = form.cleaned_data['students']
+            professors = form.cleaned_data['professors']
+            admins = form.cleaned_data['admins']
+
+            if request.user.is_superuser:
+                recipients = form.cleaned_data['students'] | form.cleaned_data['professors'] | form.cleaned_data['admins']
+            elif request.user.is_admin:
+                recipients = form.cleaned_data['students'] | form.cleaned_data['professors']
+            elif request.user.is_professor:
+                recipients = list(students)+list(admins)
+            elif request.user.is_student:
+                recipients = form.cleaned_data['professors'] | form.cleaned_data['admins']
+            
             message.sender = request.user
             message.save()
             if recipients:
-                message.recipients.add(*recipients)
+                message.recipients.set(recipients)
             messages.success(request, 'Message sent successfully!')
-            return redirect('inbox') 
+            return redirect('message_list') 
     else:
         form = MessageForm(request=request)
     return render(request, 'udl_app/send_message.html', {'form': form})
 
 def get_unread_message_count(user):
     return Message.objects.filter(recipients=user, is_read=False).count()
+
+
 
 @login_required
 def inbox(request):
@@ -405,6 +421,7 @@ def course_create(request):
     return render(request, 'courses/course_create.html', {'form': form})
 
 @login_required
+@admin_or_superuser_required
 def course_edit(request, pk):
     course = get_object_or_404(Course, pk=pk)
     if request.method == 'POST':
@@ -418,6 +435,7 @@ def course_edit(request, pk):
     return render(request, 'courses/course_edit.html', {'form': form, 'course': course})
 
 @login_required
+@admin_or_superuser_required
 def course_delete(request, pk):
     course = get_object_or_404(Course, pk=pk)
     if request.method == 'POST':
@@ -428,6 +446,7 @@ def course_delete(request, pk):
 
 
 @login_required
+# @superuser_required
 def school_list(request):
     form = SchoolForm()
 
@@ -599,7 +618,7 @@ def lecture_list(request):
         lecture_create(request)
     
     if user.is_superuser:
-        lectures = Lecture.objects.all()
+        lectures = Lecture.objects.all().order_by('id')
         grouped_by_course = defaultdict(list)
         for lecture in lectures:
             grouped_by_course[lecture.course].append(lecture)
@@ -607,14 +626,14 @@ def lecture_list(request):
     elif user.is_admin:
         admin = get_object_or_404(Admin, id=user.id)
         for school in admin.school.all():
-            lectures = Lecture.objects.filter(course__school=school)
+            lectures = Lecture.objects.filter(course__school=school).order_by('id')
         grouped_by_course = defaultdict(list)
         for lecture in lectures:
             grouped_by_course[lecture.course].append(lecture)
         return render(request, 'lectures/lecture_list.html', {'lectures': lectures, 'grouped_by_course': dict(grouped_by_course), 'form': form}) 
     elif user.is_professor:
         professor = get_object_or_404(Professor, id=user.id)
-        lectures = Lecture.objects.filter(course__professors=professor)
+        lectures = Lecture.objects.filter(course__professors=professor).order_by('id')
         grouped_by_course = defaultdict(list)
         for lecture in lectures:
             grouped_by_course[lecture.course].append(lecture)
@@ -622,7 +641,7 @@ def lecture_list(request):
     elif user.is_student:
         student = get_object_or_404(Student, id=user.id)
         enrolled_course = EnrolledCourse.objects.filter(student=student)
-        lectures = Lecture.objects.filter(course__in=enrolled_course.values('course'))
+        lectures = Lecture.objects.filter(course__in=enrolled_course.values('course')).order_by('id')
         # lectures = Lecture.objects.filter(course__students=student)
         progress = LectureProgress.objects.filter(student=student)
         progress_dict = {p.lecture.id: p.completed for p in progress}
@@ -636,10 +655,10 @@ def lecture_list(request):
         return render(request, 'lectures/lecture_list.html', {'lectures': lectures,  'form': form}) 
 
 @login_required
-def student__course_lectures(request, pk):
+def student_course_lectures(request, pk):
     student = get_object_or_404(Student, id=request.user.id)
     course = get_object_or_404(Course, pk=pk)
-    lectures = Lecture.objects.filter(course=course)
+    lectures = Lecture.objects.filter(course=course).order_by('id')
     progress = LectureProgress.objects.filter(student=student)
     progress_dict = {p.lecture.id: p.completed for p in progress}
     grouped_by_course = defaultdict(list)
@@ -653,7 +672,7 @@ def student__course_lectures(request, pk):
 @login_required
 def lecture_detail(request, pk):
     lecture = get_object_or_404(Lecture, pk=pk)
-    resource = Resource.objects.filter(lecture=lecture)
+    resource = Resource.objects.filter(lecture=lecture).order_by('id')
     form = LectureForm(instance=lecture, user=request.user)
     if request.method == 'POST':
         lecture_edit(request, pk)
@@ -1213,14 +1232,45 @@ def exam_grading_delete(request, pk):
 
 @login_required
 def question_list(request):
-    questions = Question.objects.all()
-    return render(request, 'questions/question_list.html', {'questions': questions})
+    user = request.user
+    form = QuestionForm(user=request.user)
+    if request.method == 'POST':
+        question_create(request)
 
+    questions = None
+    questions_grouped_by_course = defaultdict(list)
+    if user.is_superuser:
+        questions = Question.objects.all()
+    elif user.is_admin:
+        admin = get_object_or_404(Admin, id=user.id)
+        for school in admin.school.all():
+            questions = Question.objects.filter(course__school=school)
+    elif user.is_professor:
+        professor = get_object_or_404(Professor, id=user.id)
+        questions = Question.objects.filter(course__professors=professor)
+
+    if questions:
+        for question in questions:
+            questions_grouped_by_course[question.course].append(question)
+
+    return render(request, 'questions/question_list.html', {'questions': questions, 'form': form, 'questions_grouped_by_course': dict(questions_grouped_by_course)})
+
+@login_required
+@admin_or_superuser_or_professor_required
+def get_questions(request):
+    course_id = request.GET.get('course_id')
+    # print(course_id)
+    questions = Question.objects.filter(course_id=course_id)
+    questions_list = list(questions.values('id', 'question'))
+    return JsonResponse(questions_list, safe=False)
 
 @login_required
 def question_detail(request, pk):
+    if request.method == 'POST':
+        question_edit(request, pk)
     question = get_object_or_404(Question, pk=pk)
-    return render(request, 'questions/question_detail.html', {'question': question})
+    form = QuestionForm(instance=question, user=request.user)
+    return render(request, 'questions/question_detail.html', {'question': question, 'form': form})
 
 
 @login_required
@@ -1262,8 +1312,25 @@ def question_delete(request, pk):
 
 @login_required
 def choice_list(request):
-    choices = Choice.objects.all()
-    return render(request, 'choices/choice_list.html', {'choices': choices})
+    form = ChoiceForm(user=request.user)
+    if request.method == 'POST':
+        choice_create(request)
+    user = request.user
+    choices = None
+    choices_grouped_by_question = defaultdict(list)
+    if user.is_superuser:
+        choices = Choice.objects.all()
+    elif user.is_admin:
+        admin = get_object_or_404(Admin, id=user.id)
+        for school in admin.school.all():
+            choices = Choice.objects.filter(question__course__school=school)
+    elif user.is_professor:
+        professor = get_object_or_404(Professor, id=user.id)
+        choices = Choice.objects.filter(question__course__professors=professor)
+    if choices:
+        for choice in choices:
+            choices_grouped_by_question[choice.question].append(choice)
+    return render(request, 'choices/choice_list.html', {'choices': choices, 'form': form, 'choices_grouped_by_question': dict(choices_grouped_by_question)})
 
 
 @login_required
@@ -1448,7 +1515,20 @@ def enrolled_course_delete(request, pk):
 
 @login_required
 def discussion_list(request):
-    discussions = Discussion.objects.all()
+    user = request.user
+    discussions = None
+    if user.is_superuser:
+        discussions = Discussion.objects.all()
+    elif user.is_admin:
+        admin = get_object_or_404(Admin, id=user.id)
+        for school in admin.school.all():
+            discussions = Discussion.objects.filter(course__school=school)
+    elif user.is_professor:
+        professor = get_object_or_404(Professor, id=user.id)
+        discussions = Discussion.objects.filter(course__professors=professor)
+    elif user.is_student:
+        student = get_object_or_404(Student, id=user.id)
+        discussions = Discussion.objects.filter(course__in=student.enrolled_student.values('course'))
     return render(request, 'discussions/discussion_list.html', {'discussions': discussions})
 
 
@@ -1495,6 +1575,7 @@ def discussion_create(request, course_id):
             discussion.course = course
             discussion.starter = request.user
             discussion.save()
+            messages.success(request, 'Discussion created successfully!')
             return redirect('discussion_detail', pk=discussion.pk)
     else:
         form = DiscussionForm()
@@ -1509,10 +1590,11 @@ def discussion_edit(request, pk):
         form = DiscussionForm(request.POST, instance=discussion)
         if form.is_valid():
             form.save()
-            return redirect('discussion_list')
+            messages.success(request, 'Discussion updated successfully!')
+            return redirect('discussion_detail', pk=discussion.pk)
     else:
         form = DiscussionForm(instance=discussion)
-    return render(request, 'discussions/discussion_form.html', {'form': form})
+    return render(request, 'discussions/discussion_edit.html', {'form': form, 'discussion': discussion})
 
 
 @login_required
@@ -1520,7 +1602,8 @@ def discussion_delete(request, pk):
     discussion = get_object_or_404(Discussion, pk=pk)
     if request.method == 'POST':
         discussion.delete()
-        return redirect('discussion_list')
+        messages.success(request, 'Discussion deleted successfully!')
+        return redirect('discussion_detail', pk=discussion.pk)
     return render(request, 'discussions/discussion_confirm_delete.html', {'discussion': discussion})
 
 
@@ -1543,6 +1626,7 @@ def comment_create(request):
         form = CommentForm(request.POST)
         if form.is_valid():
             form.save()
+            messages.success(request, 'Comment created successfully!')
             return redirect('comment_list')
     else:
         form = CommentForm()
@@ -1552,47 +1636,51 @@ def comment_create(request):
 @login_required
 def comment_edit(request, pk):
     comment = get_object_or_404(Comment, pk=pk)
+    discussions = Discussion.objects.filter(comments=comment)
     if request.method == 'POST':
         form = CommentForm(request.POST, instance=comment)
         if form.is_valid():
             form.save()
-            return redirect('comment_list')
+            messages.success(request, 'Comment updated successfully!')
+            return redirect('discussion_detail', pk=discussions.first().pk)
     else:
         form = CommentForm(instance=comment)
-    return render(request, 'comments/comment_form.html', {'form': form})
+    return render(request, 'comments/comment_edit.html', {'form': form, 'comment': comment, 'discussions': discussions})
 
 
 @login_required
 def comment_delete(request, pk):
     comment = get_object_or_404(Comment, pk=pk)
+    discussion = Discussion.objects.filter(comments=comment).first()
     if request.method == 'POST':
         comment.delete()
-        return redirect('comment_list')
-    return render(request, 'comments/comment_confirm_delete.html', {'comment': comment})
+        messages.success(request, 'Comment deleted successfully!')
+        return redirect('discussion_detail', pk=discussion.pk)
+    return render(request, 'comments/comment_confirm_delete.html', {'comment': comment, 'discussion': discussion})
 
 
 @login_required
-@admin_or_professor_or_student_required
+@admin_or_superuser_or_profeesor_or_student_required
 def profile(request):
     user = request.user
-    if user.is_professor:
+    if user.is_superuser:
+        superuser_avatar = Profile.objects.filter(user=user)
+        return render(request, 'profiles/profile.html', {'user': user, 'superuser_avatar': superuser_avatar})
+    elif user.is_professor:
         course_taught = Course.objects.filter(professors=user)
         professor_avatar = Profile.objects.filter(user=user)
-        # messages.success(request, 'Profile  exists!')
-        return render(request, 'registration/profile.html', {'user': user, 'course_taught': course_taught, 'professor_avatar': professor_avatar})
+        return render(request, 'profiles/profile.html', {'user': user, 'course_taught': course_taught, 'professor_avatar': professor_avatar})
     elif user.is_student:
         student = get_object_or_404(Student, id=user.id)
         enrolled_courses = student.enrolled_student.all()
         student_avatar = Profile.objects.filter(user=user)
-        # messages.success(request, 'Profile  exists!')
-        return render(request, 'registration/profile.html', {'user': user, 'student_avatar': student_avatar, 'enrolled_courses': enrolled_courses})
+        return render(request, 'profiles/profile.html', {'user': user, 'student_avatar': student_avatar, 'enrolled_courses': enrolled_courses})
     elif user.is_admin:
         admin_avatar = Profile.objects.filter(user=user)
-        # messages.success(request, 'Profile  exists!')
-        return render(request, 'registration/profile.html', {'user': user, 'admin_avatar': admin_avatar})
+        return render(request, 'profiles/profile.html', {'user': user, 'admin_avatar': admin_avatar})
     else:
         messages.error(request, 'Profile does not exist!')
-    return render(request, 'registration/profile.html')
+    return render(request, 'profiles/profile.html')
 
 @login_required
 def profile_by_id(request, pk):
@@ -1615,9 +1703,9 @@ def profile_by_id(request, pk):
             student_avatar = Profile.objects.filter(user=user)
         except Student.DoesNotExist:
             messages.error(request, 'Profile does not exist!')
-            return render(request, 'registration/profile_by_id.html')
+            return render(request, 'profiles/profile_by_id.html')
 
-    return render(request, 'registration/profile_by_id.html', {
+    return render(request, 'profiles/profile_by_id.html', {
         'user': user,
         'course_taught': course_taught,
         'professor_avatar': professor_avatar,
@@ -1720,8 +1808,13 @@ def zoom_meeting_delete(request, pk):
 
 @login_required
 def message_list(request):
-    messages = Message.objects.all()
-    return render(request, 'messages/message_list.html', {'messages': messages})
+    user = request.user
+    messages_list = None
+    if user.is_superuser:
+        messages_list = Message.objects.all()
+    else:
+        messages_list = Message.objects.filter(sender=user)
+    return render(request, 'messages/message_list.html', {'messages_list': messages_list})
 
 
 @login_required
@@ -1730,29 +1823,37 @@ def message_detail(request, pk):
     return render(request, 'messages/message_detail.html', {'message': message})
 
 
-@login_required
-def message_create(request):
-    if request.method == 'POST':
-        form = MessageForm(request.POST)
-        if form.is_valid():
-            form.save()
-            return redirect('message_list')
-    else:
-        form = MessageForm()
-    return render(request, 'messages/message_form.html', {'form': form})
+# @login_required
+# def message_create(request):
+#     if request.method == 'POST':
+#         form = MessageForm(request.POST)
+#         if form.is_valid():
+#             form.save()
+#             return redirect('message_list')
+#     else:
+#         form = MessageForm()
+#     return render(request, 'messages/message_form.html', {'form': form})
 
 
 @login_required
 def message_edit(request, pk):
     message = get_object_or_404(Message, pk=pk)
     if request.method == 'POST':
-        form = MessageForm(request.POST, instance=message)
+        form = MessageForm(request.POST, instance=message, request=request)
         if form.is_valid():
-            form.save()
+            message = form.save(commit=False)
+            students = form.cleaned_data.get('students')
+            professors = form.cleaned_data.get('professors')
+            admins = form.cleaned_data.get('admins')
+
+            recipients = list(students) + list(professors) + list(admins)
+            message.recipients.set(recipients)
+            message.save()
+            messages.success(request, 'Message updated successfully!')
             return redirect('message_list')
     else:
-        form = MessageForm(instance=message)
-    return render(request, 'messages/message_form.html', {'form': form})
+        form = MessageForm(instance=message, request=request)
+    return render(request, 'messages/message_edit.html', {'form': form, 'message': message})
 
 
 @login_required
@@ -1760,6 +1861,7 @@ def message_delete(request, pk):
     message = get_object_or_404(Message, pk=pk)
     if request.method == 'POST':
         message.delete()
+        messages.success(request, 'Message deleted successfully!')
         return redirect('message_list')
     return render(request, 'messages/message_confirm_delete.html', {'message': message})
 
@@ -1855,7 +1957,7 @@ def professor_list(request):
         # Check if the user is an admin
         admin = get_object_or_404(Admin, id=user.id)
         school = School.objects.filter(admin_school=admin).first()  
-        professors = Professor.objects.filter(courses_taught__school=school).distinct()
+        professors = Professor.objects.filter(school=school).distinct()
     
     # Retrieve profile pictures for professors
     professor_avatars = {professor.id: Profile.objects.filter(user=professor).first() for professor in professors}
@@ -1998,21 +2100,6 @@ def search(request):
 
 
 
-from reportlab.lib.pagesizes import letter
-from reportlab.pdfgen import canvas
-from django.http import HttpResponse
-
-def generate_pdf(request):
-    response = HttpResponse(content_type='application/pdf')
-    response['Content-Disposition'] = 'attachment; filename="student_report.pdf"'
-    p = canvas.Canvas(response, pagesize=letter)
-    p.drawString(100, 750, "Student Report")
-    students = Student.objects.all()
-    for i, student in enumerate(students):
-        p.drawString(100, 700 - (i * 20), f"{student.first_name} {student.last_name}")
-    p.showPage()
-    p.save()
-    return response
 
 
 # views.py

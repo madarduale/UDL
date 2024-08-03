@@ -52,7 +52,7 @@
             <li class="list-group-item active">Assignments Title: {{ assignment.title }}</li>
             {% endif %}
   
-            <li class="list-group-item">description: {{assignment.description}}</li>
+            <li class="list-group-item">description: {{assignment.description | safe }}</li>
             <li class="list-group-item">Course: {{assignment.course.title}}</li>
             <li class="list-group-item">due date: {{assignment.due_date}}</li>
             {% if assignment.file %}
@@ -78,6 +78,7 @@
                     <div class="modal-body">
                     <form method="POST" enctype="multipart/form-data">
                         {% csrf_token %}
+                        {{ form.media }}
                         {{ form | crispy }}
                         <a href="{% url 'assignment_detail' assignment.pk %}" class="btn btn-secondary">Cancel</a>
                         <button type="submit" class="btn btn-primary">Submit</button>

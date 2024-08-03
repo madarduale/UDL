@@ -54,6 +54,7 @@
       <div class="modal-body">
         <form method="POST" enctype="multipart/form-data">
           {% csrf_token %}
+          {{ form.media }}
         {{ form | crispy }}
             <a href="{% url 'exam_list' %}" class="btn btn-secondary">Cancel</a>
           <button type="submit" class="btn btn-primary">Submit</button>
@@ -83,6 +84,7 @@ New Questions
       <div class="modal-body">
         <form method="POST" enctype="multipart/form-data">
           {% csrf_token %}
+          {{ form.media }}
         {{ form3 | crispy }}
             <a href="{% url 'exam_list' %}" class="btn btn-secondary">Cancel</a>
           <button type="submit" class="btn btn-primary">Submit</button>
@@ -154,7 +156,7 @@ New Questions
             <li class="list-group-item active">Exam Title: <a href="{% url 'exam_detail' exam.pk %}"  style="color: #ffff;">{{ exam.title }}<i class="fa fa-info-circle m-2" aria-hidden="true"></i></a></li>
             {% endif %}
             {% endif %}
-            <li class="list-group-item">Description: {{exam.description}}</li>
+            <li class="list-group-item">Description: {{exam.description | safe }}</li>
             <li class="list-group-item">Course: {{exam.course.title}}</li>
             <li class="list-group-item">Exam Type: {{exam.exam_type}}</li>
             <li class="list-group-item">Start Time: {{exam.start_time}}</li>
@@ -180,7 +182,7 @@ New Questions
             {% else %}
             <li class="list-group-item active">Exam Title: {{exam.title}}</li>
             {% endif %}
-            <li class="list-group-item">Description: {{exam.description}}</li>
+            <li class="list-group-item">Description: {{exam.description | safe }}</li>
             <li class="list-group-item">Course: {{exam.course.title}}</li>
             <li class="list-group-item">Exam Type: {{exam.exam_type}}</li>
             <li class="list-group-item">Start Time: {{exam.start_time}}</li>
@@ -218,12 +220,12 @@ New Questions
 <script>
   document.addEventListener('DOMContentLoaded', function() {
       const currentTime = new Date('{{ current_time|date:"Y-m-d H:i:s" }}').getTime();
-      console.log('currentTime', currentTime);
+      // console.log('currentTime', currentTime);
       {% for exam in exams %}
           const examStartTime_{{exam.id}} = new Date('{{ exam.start_time|date:"Y-m-d H:i:s" }}').getTime();
-          console.log('examStartTime', examStartTime_{{exam.id}});
+          // console.log('examStartTime', examStartTime_{{exam.id}});
           const examEndTime_{{exam.id}} = new Date('{{ exam.end_time|date:"Y-m-d H:i:s" }}').getTime();
-          console.log('examEndTime', examEndTime_{{exam.id}});
+          // console.log('examEndTime', examEndTime_{{exam.id}});
   
           if (examStartTime_{{exam.id}} > currentTime) {
               const countdownElement = document.getElementById('countdown-{{ exam.id }}');
@@ -246,7 +248,7 @@ New Questions
               }, 1000);
           } else if (examStartTime_{{exam.id}} <= currentTime && examEndTime_{{exam.id}} >= currentTime) {
               const remainingTimeElement = document.getElementById('remaining-time-{{ exam.id }}');
-              console.log('remainingTimeElement', remainingTimeElement);
+              // console.log('remainingTimeElement', remainingTimeElement);
               const remainingTimeFunction = setInterval(function() {
                   const now = new Date().getTime();
                   // console.log('now', now);
@@ -268,5 +270,28 @@ New Questions
           }
       {% endfor %}
   });
+
+  // $(document).ready(function() {
+  //           $('#id_course').change(function() {
+  //               var courseId = $(this).val();
+  //               console.log('courseid: ', courseId)
+  //               $.ajax({
+  //                   url: '{% url "ajax_get_questions" %}',
+  //                   data: {
+  //                       'course_id': courseId
+  //                   },
+  //                   success: function(data) {
+  //                       var questionsSelect = $('#id_questions');
+  //                       console.log('id', questionsSelect)
+  //                       console.log("data", data)
+  //                       questionsSelect.empty();
+  //                       for (var i = 0; i < data.length; i++) {
+  //                           questionsSelect.append('<option value="' + data[i].id + '">' + data[i].question + '</option>');
+  //                       }
+  //                   }
+  //               });
+  //           });
+  //       });
+
   </script>
 {% endblock content %}

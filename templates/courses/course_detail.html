@@ -28,14 +28,14 @@
 
 <button class="btn btn-primary"><a href="{% url 'discussion_create' course.pk %}" style="color: #ffff;"> Create Discussion</a></button>
 
-{% if user.is_superuser or user.is_professor %}
+{% if user.is_superuser %}
 <p> <a href="{% url 'course_create'%}"><i class="fa fa-plus" aria-hidden="true"></i></a></p>
 
 <div class="card m-4" style="width: 18rem;">
     <img src="{{course.image.url}}" class="card-img-top" alt="...">
     <div class="card-body">
       <h5 class="card-title">{{ course.title }}</h5>
-      <p class="card-text">{{course.description}}</p>
+      <p class="card-text">{{course.description | safe }}</p>
     </div>
     <ul class="list-group list-group-flush">
       <li class="list-group-item">{{course.code}}</li>
@@ -52,13 +52,33 @@
 
 {% endif %}
 
+{% if user.is_professor %}
+
+<div class="card m-4" style="width: 18rem;">
+    <img src="{{course.image.url}}" class="card-img-top" alt="...">
+    <div class="card-body">
+      <h5 class="card-title">{{ course.title }}</h5>
+      <p class="card-text">{{course.description | safe }}</p>
+    </div>
+    <ul class="list-group list-group-flush">
+      <li class="list-group-item">{{course.code}}</li>
+      <li class="list-group-item">{{course.school}}</li>
+      {% for professor in course.professors.all %}
+      <li class="list-group-item">{{professor.username }}</li>
+      {% endfor %}
+    </ul>
+ 
+  </div>
+
+{% endif %}
+
 {% if user.is_admin %}
 
 <div class="card m-4" style="width: 18rem;">
     <img src="{{course.image.url}}" class="card-img-top" alt="...">
     <div class="card-body">
       <h5 class="card-title">{{ course.title }}</h5>
-      <p class="card-text">{{course.description}}</p>
+      <p class="card-text">{{course.description  | safe }}</p>
     </div>
     <ul class="list-group list-group-flush">
       <li class="list-group-item">{{course.code}}</li>

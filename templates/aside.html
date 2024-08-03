@@ -52,17 +52,15 @@
                 <a href="{% url 'dashboard' %}"><i class="fas fa-tachometer-alt"></i>Dashboard</a>
             </li>
      
+            <li class="{% if request.path == prof %}active{% endif %}">
+                <a href="{% url 'profile' %}"><i class="fas fa-user"></i>Profile</a>
+            </li>
             <li class="{% if request.path == sl %}active{% endif %}">
                 <a href="{% url 'school_list' %}"><i class="fas fa-school"></i>Faculty</a>
             </li>
             <li class="{% if request.path == sm %}active{% endif %}">
                 <a href="{% url 'semester_list' %}"><i class="fas fa-hourglass-start"></i>Semesters</a>
             </li>
-            {% if  not user.is_superuser %}
-            <li class="{% if request.path == prof %}active{% endif %}">
-                <a href="{% url 'profile' %}"><i class="fas fa-user"></i>Profile</a>
-            </li>
-            {% endif %}
             <li class="{% if request.path == admin_p %}active{% endif %}">
                 <a href="{% url 'admin:index' %}"><i class="fas fa-user-tie"></i>Admin Panel</a>
             </li>
@@ -95,10 +93,10 @@
                 <a href="{% url 'jitsi_meeting' %}"><i class="fas fa-video"></i>Zoom Meetings</a>
             </li>
             <li class="{% if request.path == messages %}active{% endif %}">
-                <a href="{% url 'send_message' %}"><i class="fas fa-envelope"></i>Messages</a>
+                <a href="{% url 'send_message' %}"><i class="fas fa-paper-plane"></i>Send</a>
             </li>
             <li class="{% if request.path == inbox %}active{% endif %}">
-                <a href="{% url 'inbox' %}"><i class="fas fa-envelope"></i>Inbox</a>
+                <a href="{% url 'inbox' %}"><i class="fas fa-envelope-open" id="readed"></i> <i class="fas fa-envelope" id="unreaded" style="display: none ;"></i>Inbox</a>
             </li>
             {% endif %}
 
@@ -145,10 +143,10 @@
                 <a href="{% url 'jitsi_meeting' %}"><i class="fas fa-video"></i>Zoom Meetings</a>
             </li>
             <li class="{% if request.path == messages %}active{% endif %}">
-                <a href="{% url 'send_message' %}"><i class="fas fa-envelope"></i>Messages</a>
+                <a href="{% url 'send_message' %}"><i class="fas fa-paper-plane"></i>Send</a>
             </li>
             <li class="{% if request.path == inbox %}active{% endif %}">
-                <a href="{% url 'inbox' %}"><i class="fas fa-envelope"></i>Inbox</a>
+                <a href="{% url 'inbox' %}"><i class="fas fa-envelope-open" id="readed"></i> <i class="fas fa-envelope" id="unreaded" style="display: none ;"></i>Inbox</a>
             </li>
             {% endif %}
 
@@ -196,10 +194,10 @@
                 <a href="{% url 'jitsi_meeting' %}"><i class="fas fa-video"></i>Zoom Meetings</a>
             </li>
             <li class="{% if request.path == messages %}active{% endif %}">
-                <a href="{% url 'send_message' %}"><i class="fas fa-envelope"></i>Messages</a>
+                <a href="{% url 'send_message' %}"><i class="fas fa-paper-plane"></i>Send</a>
             </li>
             <li class="{% if request.path == inbox %}active{% endif %}">
-                <a href="{% url 'inbox' %}"><i class="fas fa-envelope"></i>Inbox</a>
+                <a href="{% url 'inbox' %}"><i class="fas fa-envelope-open" id="readed"></i> <i class="fas fa-envelope" id="unreaded" style="display: none ;"></i>Inbox</a>
             </li>
 			{% endif %}
 
@@ -244,10 +242,10 @@
                 <a href="{% url 'jitsi_meeting' %}"><i class="fas fa-video"></i>Zoom Meetings</a>
             </li>
             <li class="{% if request.path == messages %}active{% endif %}">
-                <a href="{% url 'send_message' %}"><i class="fas fa-envelope"></i>Messages</a>
+                <a href="{% url 'send_message' %}"><i class="fas fa-paper-plane"></i>Send</a>
             </li>
             <li class="{% if request.path == inbox %}active{% endif %}">
-                <a href="{% url 'inbox' %}"><i class="fas fa-envelope"></i>Inbox</a>
+                <a href="{% url 'inbox' %}"><i class="fas fa-envelope-open" id="readed"></i> <i class="fas fa-envelope" id="unreaded" style="display: none ;"></i>Inbox</a>
             </li>
             {% endif %}
             <br />
@@ -258,11 +256,9 @@
             <li class="{% if request.path == prof_a %}active{% endif %}">
                 <a href="{% url 'account' user.pk %}"><i class="fas fa-cogs"></i>Account Setting</a>
             </li>
-            {% if not user.is_superuser %}
             <li class="{% if request.path == prof_e %}active{% endif %}">
-                <a href="{% url 'profile_edit' user.profile.pk %}"><i class="fas fa-cogs"></i>Edit Profile</a>
-            </li>
-            {% endif %}
+                <a href="{% url 'profile_edit' user.profile.pk %}"><i class="fas fa-user-edit"></i>Edit Profile</a>
+            </li> 
             <li class="{% if request.path == cp %}active{% endif %}">
 				<a href="{% url 'password_change' %}"><i class="fas fa-key"></i>Change Password</a>
             </li>
@@ -313,8 +309,30 @@
                 <br />UOH&copy; <script>document.write(new Date().getFullYear());</script>
                 <br />
             </p>
-            <a Uuniversity of hargeisa>
+            <a >University of Hargeisa
             </a>
         </div>
     </footer>
 </div>
+
+<script>
+    // let readed = document.getElementById('readed');
+    // let ureaded = document.getElementById('ureaded');
+    // function checkUnreadAndReadMessages() {
+    //     fetch('/messages/unread_count/')
+    //         .then(response => response.json())
+    //         .then(data => {
+    //             if (data.unread_count > 0) {
+    //                 readed.style.display = 'none';
+    //                 ureaded.style.display = 'block';
+    //             }
+    //             else {
+    //                 readed.style.display = 'block';
+    //                 ureaded.style.display = 'none';
+    //             }
+    //         });
+    // }
+    // setInterval(checkUnreadAndReadMessages, 60000);  // Check every minute
+
+   
+</script>

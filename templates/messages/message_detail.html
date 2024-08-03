@@ -1,0 +1,37 @@
+{% extends '../base.html' %}
+{% block content %}
+    <h1>Message Detail</h1>
+    <ul>
+        {% for message in messages %}
+            <li>{{ message }}</li>
+        {% endfor %}
+    </ul>
+    <hr>
+    <div>
+        <ul class="list-group">
+       
+            <li class="list-group-item active">Message ID: {{ message.id }}</li>
+            <li class="list-group-item">Sender: {{ message.sender }}</li>           
+            {% for recipient in message.recipients.all %}
+                <li class="list-group-item">Receiver: {{ recipient }}</li>
+            {% endfor %}
+            <li class="list-group-item">Subject: {{ message.subject }}</li>
+            <li class="list-group-item">Content: {{ message.content | safe }}</li>
+            <li class="list-group-item">Sent at: {{ message.timestamp }}</li>
+            <li class="list-group-item">Is readed: {{ message.is_read }}</li>
+            
+            {% if message.url %}
+                <li class="list-group-item"><a href="{{ message.url }}" target="_blank" rel="noopener noreferrer">{{ message.url }}</a></li>
+            {% else %}
+                <li class="list-group-item">No URL</li>                
+            {% endif %}
+            <li class="list-group-item">
+
+                <a class="btn btn-outline-secondary" href="{% url 'message_list' %}">Back</a>
+                <a class="btn btn-outline-primary" href="{% url 'message_edit' message.pk %}">Edit</a>
+                <a class="btn btn-outline-danger" href="{% url 'message_delete' message.pk %}">Delete</a>
+            </li>
+
+        </ul>
+    </div>
+{% endblock %}

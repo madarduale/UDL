@@ -16,9 +16,9 @@
 
 <nav style="--bs-breadcrumb-divider: '>';" aria-label="breadcrumb">
     <ol class="breadcrumb">
-      <li class="breadcrumb-item"><a href="{% url dashboard %}">Dashboard</a></li>
-        <l class="breadcrumb-item" ><a href="{% url 'exam_list' %}">Exams List</a></l>
-      <li class="breadcrumb-item active" aria-current="page">Exam detail</li>
+      <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+        <l class="breadcrumb-item" ><a href="{% url 'question_list' %}">Questions List</a></l>
+      <li class="breadcrumb-item active" aria-current="page">Question detail</li>
     </ol>
 </nav>
 
@@ -36,37 +36,21 @@
     {% endfor %}
 {% endif %}
 
-<h2>Exam Detail</h2>
+<h2>Question Detail</h2>
 
 {% if user.is_superuser %}
-<p> <a href="{% url 'exam_edit' exam.pk %}" class="btn btn-primary">Exam Edite</a></p>
+<p> <a href="{% url 'question_edit' question.pk %}" class="btn btn-primary">question Edite</a></p>
 {% endif %}
 <br>
 <hr>
 
 <ul class="list-group">
     
-            {% if exam.end_time < current_time %}
-            <li class="list-group-item" style="background-color: #f8d7da;">Exam Title: {{ exam.title }}</li>
-            {% else %}
-            <li class="list-group-item active">Exam Title: {{ exam.title }}</li>
-            {% endif %}
-  
-            <li class="list-group-item">Description: {{exam.description}}</li>
-            <li class="list-group-item">Course: {{exam.course.title}}</li>
-            <li class="list-group-item">Course: {{exam.exam_type}}</li>
-            <li class="list-group-item">Start Time: {{exam.start_time}}</li>
-            <li class="list-group-item">End Time: {{exam.end_time}}</li>
-            {% for question in exam.questions.all %}
-            <li class="list-group-item">Question: {{question.text}}</li>
-            {% for choice in question.choices.all %}
-            <li class="list-group-item">Choice: {{choice.text1}}</li>
-            <l class="list-group-item">Choice: {{choice.text2}}</l>
-            <l class="list-group-item">Choice: {{choice.text3}}</l>
-            <l class="list-group-item">Choice: {{choice.text4}}</l>
-            <l class="list-group-item">Correct Answer: {{choice.correct_text}}</l>
-            {% endfor %}
-            {% endfor %}
+    <li class="list-group-item">Course: {{question.course.title}}</li>
+    <li class="list-group-item">question type: {{question.question_type}}</li>
+    <li class="list-group-item">Question: {{question.question | safe }}</li>
+    <li class="list-group-item">Marks: {{question.marks}}</li>
+    
             {% if user.is_admin or user.is_professor %}
             <li class="list-group-item">
                 <!-- Button trigger modal -->
@@ -79,14 +63,15 @@
                 <div class="modal-dialog">
                 <div class="modal-content">
                     <div class="modal-header">
-                    <h5 class="modal-title" id="exampleModalLabel">Edite exam</h5>
+                    <h5 class="modal-title" id="exampleModalLabel">Edite Question</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
                     <form method="POST" enctype="multipart/form-data">
                         {% csrf_token %}
+                        {{ form.media }}
                         {{ form | crispy }}
-                        <a href="{% url 'exam_detail' exam.pk %}" class="btn btn-secondary">Cancel</a>
+                        <a href="{% url 'question_detail' question.pk %}" class="btn btn-secondary">Cancel</a>
                         <button type="submit" class="btn btn-primary">Submit</button>
                     </form>
                     </div>
@@ -97,7 +82,7 @@
                 </div>
                 </div>
             </div>
-            <a href="{% url 'exam_delete' exam.pk %}" class="btn btn-danger"><i class="fa fa-trash-o"></i></a>
+            <a href="{% url 'question_delete' question.pk %}" class="btn btn-danger"><i class="fa fa-trash-o"></i></a>
             </li>
             {% endif %}
             <br>
