@@ -36,7 +36,7 @@ COPY . /app/
 RUN python manage.py collectstatic --noinput
 
 # Expose the port the app runs on
-EXPOSE 7000
+EXPOSE 8000
 
 # Define the command to run the application
-CMD ["gunicorn", "--workers=3", "--bind=0.0.0.0:7000", "UDL_project.wsgi:application", "python", "manage.py", "runserver"]
+CMD ["gunicorn", "--workers=3", "--bind=0.0.0.0:8000", "UDL_project.wsgi:application", "python", "manage.py", "runserver"]
