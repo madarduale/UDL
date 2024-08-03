@@ -3,11 +3,11 @@ version: '3.8'
 services:
   web:
     build: .
-    command: gunicorn --workers=3 --bind=0.0.0.0:8000 UDL_project.wsgi:application
+    command: gunicorn --workers=3 --bind=0.0.0.0:7000 UDL_project.wsgi:application
     volumes:
       - .:/app
     ports:
-      - "8000:8000"
+      - "7000:7000"
     env_file:
       - UDL_project/.env
 

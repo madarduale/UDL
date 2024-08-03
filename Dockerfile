@@ -26,6 +26,9 @@ WORKDIR /app
 COPY requirements.txt /app/
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Copy .env file
+COPY UDL_project/.env .env
+
 # Copy the rest of the application code to the container
 COPY . /app/
 
@@ -33,7 +36,7 @@ COPY . /app/
 RUN python manage.py collectstatic --noinput
 
 # Expose the port the app runs on
-EXPOSE 8000
+EXPOSE 7000
 
 # Define the command to run the application
-CMD ["gunicorn", "--workers=3", "--bind=0.0.0.0:8000", "UDL_project.wsgi:application"]
+CMD ["gunicorn", "--workers=3", "--bind=0.0.0.0:7000", "UDL_project.wsgi:application", "python", "manage.py", "runserver"]
