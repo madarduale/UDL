@@ -9,7 +9,7 @@ services:
     ports:
       - "7000:7000"
     env_file:
-      - UDL_project/.env
+      - .env
 
   #   depends_on:
   #     - db
