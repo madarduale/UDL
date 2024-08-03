@@ -17,7 +17,7 @@ crispy-bootstrap5==2024.2
 cryptography==42.0.5
 cssselect2==0.7.0
 dj-database-url==2.2.0
-Django==5.0.4
+Django==5.0.7
 django-ckeditor==6.7.1
 django-crispy-forms==2.1
 django-embed-video==1.4.10
