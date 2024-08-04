@@ -48,4 +48,4 @@ RUN python manage.py collectstatic --noinput
 EXPOSE 8000
 
 # Define the command to run the application
-CMD ["gunicorn", "--workers=3", "--bind=0.0.0.0:8000", "UDL_project.wsgi:application"]
+CMD ["gunicorn", "--workers=3", "--bind=0.0.0.0:$PORT", "UDL_project.wsgi:application"]

@@ -36,7 +36,8 @@ SECRET_KEY = env('SECRET_KEY')
 # DEBUG = env('DEBUG')
 DEBUG = False
 
-ALLOWED_HOSTS = [env('ALLOWED_HOSTS')]
+ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=['*'])
+
 # ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'udl.onrender.com']
 
 
