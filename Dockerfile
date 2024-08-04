@@ -31,9 +31,15 @@ COPY . .
 
 # Set build-time environment variables (Recommended to use ENV instead of ARG)
 ENV SECRET_KEY=${SECRET_KEY} 
+RUN echo "SECRET_KEY: $SECRET_KEY"
 ENV DEBUG=${DEBUG}
+RUN echo "DEBUG: $DEBUG"
 ENV ALLOWED_HOSTS=${ALLOWED_HOSTS}
+RUN echo "ALLOWED_HOSTS: $ALLOWED_HOSTS"
 ENV DATABASE_URL=${DATABASE_URL}
+RUN echo "DATABASE_URL: $DATABASE_URL"
+
+# displat the environment variables
 
 # Collect static files (After environment variables)
 RUN python manage.py collectstatic --noinput
