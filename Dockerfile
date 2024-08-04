@@ -34,12 +34,13 @@ RUN echo "SECRET_KEY: $SECRET_KEY"
 RUN echo "DEBUG: $DEBUG"
 RUN echo "ALLOWED_HOSTS: $ALLOWED_HOSTS"
 RUN echo "DATABASE_URL: $DATABASE_URL"
+RUN echo "PORT: $PORT"
 
 # Collect static files
 RUN python manage.py collectstatic --noinput
 
-# Expose the port the app runs on
-EXPOSE 8000
+# Expose the port the app runs on (use the PORT environment variable)
+EXPOSE ${PORT}
 
-# Define the command to run the application
-CMD ["gunicorn", "UDL_project.wsgi"]
+# Define the command to run the application, using the PORT environment variable
+CMD ["gunicorn", "--workers=3", "--bind=0.0.0.0:$PORT", "UDL_project.wsgi:application"]

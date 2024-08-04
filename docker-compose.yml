@@ -4,12 +4,12 @@ services:
   web:
     build:
       context: .
-    command: gunicorn UDL_project.wsgi
+    command: gunicorn --workers=3 --bind=0.0.0.0:$PORT UDL_project.wsgi:application
     volumes:
       - .:/app
-    # ports:
-    #   - "8000:8000"
+    ports:
+      - "10000:10000"
     env_file:
       - UDL_project/.env
-    # environment:
-    #   - PORT=8000
+    environment:
+      - PORT=10000
