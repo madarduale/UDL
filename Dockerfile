@@ -1,7 +1,7 @@
 # Use a slim Python image from the Docker Hub
 FROM python:3.11-slim
 
-# Set environment variables (Recommended to use ENV instead of ARG)
+# Set environment variables
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 
@@ -22,26 +22,20 @@ RUN apt-get update && apt-get install -y \
 # Set the working directory
 WORKDIR /app
 
-# Install Python dependencies (Use pip install instead of COPY)
+# Install Python dependencies
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the rest of the application code to the container
 COPY . .
 
-# Set build-time environment variables (Recommended to use ENV instead of ARG)
-ENV SECRET_KEY=${SECRET_KEY} 
+# Display the environment variables for debugging
 RUN echo "SECRET_KEY: $SECRET_KEY"
-ENV DEBUG=${DEBUG}
 RUN echo "DEBUG: $DEBUG"
-ENV ALLOWED_HOSTS=${ALLOWED_HOSTS}
 RUN echo "ALLOWED_HOSTS: $ALLOWED_HOSTS"
-ENV DATABASE_URL=${DATABASE_URL}
 RUN echo "DATABASE_URL: $DATABASE_URL"
 
-# displat the environment variables
-
-# Collect static files (After environment variables)
+# Collect static files
 RUN python manage.py collectstatic --noinput
 
 # Expose the port the app runs on
