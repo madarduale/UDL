@@ -4,7 +4,7 @@ FROM python:3.11-slim
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
-ENV PORT=8080
+# ENV PORT=8080
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
@@ -50,4 +50,4 @@ RUN python manage.py collectstatic --noinput
 EXPOSE 8080
 
 # Define the command to run the application
-CMD ["gunicorn", "--workers=3", "--bind=0.0.0.0:$PORT", "UDL_project.wsgi:application"]
+CMD ["gunicorn", "--workers=3", "--bind=0.0.0.0:8080", "UDL_project.wsgi:application"]
