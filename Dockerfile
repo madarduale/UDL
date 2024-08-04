@@ -40,7 +40,7 @@ RUN echo "PORT: $PORT"
 RUN python manage.py collectstatic --noinput
 
 # Expose the port the app runs on (use the PORT environment variable)
-EXPOSE ${PORT}
+EXPOSE 10000
 
 # Define the command to run the application, using the PORT environment variable
-CMD ["gunicorn", "--workers=3", "--bind=0.0.0.0:$PORT", "UDL_project.wsgi:application"]
+CMD ["gunicorn", "--workers=3", "--bind=0.0.0.0:10000", "UDL_project.wsgi:application"]
