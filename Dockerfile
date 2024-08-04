@@ -26,14 +26,15 @@ WORKDIR /app
 COPY requirements.txt /app/
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy .env file
-# COPY .env .env
-
 # Copy the rest of the application code to the container
 COPY . /app/
 
-# Collect static files
-RUN python manage.py collectstatic --noinput
+# Build-time environment variables
+ARG SECRET_KEY
+ARG DEBUG
+
+# Collect static files (pass build arguments as environment variables)
+RUN SECRET_KEY=$SECRET_KEY DEBUG=$DEBUG python manage.py collectstatic --noinput
 
 # Expose the port the app runs on
 EXPOSE 8000
