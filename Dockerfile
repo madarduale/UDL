@@ -40,13 +40,13 @@ ENV SECRET_KEY=$SECRET_KEY
 ENV DEBUG=$DEBUG
 ENV ALLOWED_HOSTS=$ALLOWED_HOSTS
 ENV DATABASE_URL=$DATABASE_URL
-ENV PORT=$PORT
+ENV PORT=8080
 
 # Collect static files
 RUN python manage.py collectstatic --noinput
 
 # Expose the port the app runs on
-EXPOSE 8000
+EXPOSE 8080
 
 # Define the command to run the application
 CMD ["gunicorn", "--workers=3", "--bind=0.0.0.0:$PORT", "UDL_project.wsgi:application"]
