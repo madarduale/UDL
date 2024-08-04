@@ -33,8 +33,8 @@ SECRET_KEY = env('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 # False if not in os.environ because of casting above
-DEBUG = env('DEBUG')
-# DEBUG = 
+# DEBUG = env('DEBUG')
+DEBUG = False
 
 ALLOWED_HOSTS = [env('ALLOWED_HOSTS')]
 # ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'udl.onrender.com']
