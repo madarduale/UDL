@@ -4,17 +4,17 @@ services:
   web:
     build:
       context: .
-      args:
-        SECRET_KEY: ${SECRET_KEY}
-        DEBUG: ${DEBUG}
-        ALLOWED_HOSTS: ${ALLOWED_HOSTS}
-        DATABASE_URL: ${DATABASE_URL}
     command: gunicorn --workers=3 --bind=0.0.0.0:8080 UDL_project.wsgi:application
     volumes:
       - .:/app
     ports:
       - "8080:8080"
-    env_file:
-      - UDL_project/.env
     environment:
-      - PORT=8080
+      - SECRET_KEY=${SECRET_KEY}
+      - DEBUG=${DEBUG}
+      - ALLOWED_HOSTS=${ALLOWED_HOSTS}
+      - DATABASE_URL=${DATABASE_URL}
+      - PORT=8080 
+    # OR:
+    # env_file:
+    #   - .env
