@@ -1,10 +1,10 @@
-# Use the official Python image from the Docker Hub
+# Use a slim Python image from the Docker Hub
 FROM python:3.11-slim
 
-# Set environment variables
+# Set environment variables (Recommended to use ENV instead of ARG)
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
-# ENV PORT=8080
+ENV PORT=8080  # Define your port here
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
@@ -23,27 +23,20 @@ RUN apt-get update && apt-get install -y \
 # Set the working directory
 WORKDIR /app
 
-# Install Python dependencies
-COPY requirements.txt /app/
+# Install Python dependencies (Use pip install instead of COPY)
+COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the rest of the application code to the container
-COPY . /app/
+COPY . .
 
-# Set build-time environment variables
-ARG SECRET_KEY
-ARG DEBUG
-ARG ALLOWED_HOSTS
-ARG DATABASE_URL
+# Set build-time environment variables (Recommended to use ENV instead of ARG)
+ENV SECRET_KEY=${SECRET_KEY} 
+ENV DEBUG=${DEBUG}
+ENV ALLOWED_HOSTS=${ALLOWED_HOSTS}
+ENV DATABASE_URL=${DATABASE_URL}
 
-# Set environment variables for the build
-ENV SECRET_KEY=$SECRET_KEY
-ENV DEBUG=$DEBUG
-ENV ALLOWED_HOSTS=$ALLOWED_HOSTS
-ENV DATABASE_URL=$DATABASE_URL
-
-
-# Collect static files
+# Collect static files (After environment variables)
 RUN python manage.py collectstatic --noinput
 
 # Expose the port the app runs on
