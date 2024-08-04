@@ -8,6 +8,7 @@ services:
         SECRET_KEY: ${SECRET_KEY}
         DEBUG: ${DEBUG}
         ALLOWED_HOSTS: ${ALLOWED_HOSTS}
+        DATABASE_URL: ${DATABASE_URL}
     command: gunicorn --workers=3 --bind=0.0.0.0:8000 UDL_project.wsgi:application
     volumes:
       - .:/app

@@ -34,7 +34,7 @@ ARG SECRET_KEY
 ARG DEBUG
 
 # Collect static files (pass build arguments as environment variables)
-RUN SECRET_KEY=$SECRET_KEY DEBUG=$DEBUG  ALLOWED_HOSTS=$ALLOWED_HOSTS python manage.py collectstatic --noinput
+RUN SECRET_KEY=$SECRET_KEY DEBUG=$DEBUG  ALLOWED_HOSTS=$ALLOWED_HOSTS DATABASE_URL=$DATABASE_URL python manage.py collectstatic --noinput
 
 # Expose the port the app runs on
 EXPOSE 8000
