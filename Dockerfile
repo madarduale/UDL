@@ -4,6 +4,7 @@ FROM python:3.11-slim
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
+ENV PORT=8080
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
@@ -40,7 +41,7 @@ ENV SECRET_KEY=$SECRET_KEY
 ENV DEBUG=$DEBUG
 ENV ALLOWED_HOSTS=$ALLOWED_HOSTS
 ENV DATABASE_URL=$DATABASE_URL
-ENV PORT=8080
+
 
 # Collect static files
 RUN python manage.py collectstatic --noinput
