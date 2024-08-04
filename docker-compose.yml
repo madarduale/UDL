@@ -4,7 +4,7 @@ services:
   web:
     build:
       context: .
-    command: gunicorn --workers=3 --bind=0.0.0.0:8080 UDL_project.wsgi:application
+    command: gunicorn --workers=3 --bind=0.0.0.0:$PORT UDL_project.wsgi:application
     volumes:
       - .:/app
     ports:
