@@ -9,7 +9,7 @@ services:
         DEBUG: ${DEBUG}
         ALLOWED_HOSTS: ${ALLOWED_HOSTS}
         DATABASE_URL: ${DATABASE_URL}
-    command: gunicorn --workers=3 --bind=0.0.0.0:$PORT UDL_project.wsgi:application
+    command: gunicorn --workers=3 --bind=0.0.0.0:8080 UDL_project.wsgi:application
     volumes:
       - .:/app
     ports:
