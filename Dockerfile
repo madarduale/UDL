@@ -40,6 +40,7 @@ ENV SECRET_KEY=$SECRET_KEY
 ENV DEBUG=$DEBUG
 ENV ALLOWED_HOSTS=$ALLOWED_HOSTS
 ENV DATABASE_URL=$DATABASE_URL
+ENV PORT=$PORT
 
 # Collect static files
 RUN python manage.py collectstatic --noinput
