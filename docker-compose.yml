@@ -9,12 +9,12 @@ services:
       - .:/app
     ports:
       - "8080:8080"
-    # environment:
-    #   - SECRET_KEY=${SECRET_KEY}
-    #   - DEBUG=${DEBUG}
-    #   - ALLOWED_HOSTS=${ALLOWED_HOSTS}
-    #   - DATABASE_URL=${DATABASE_URL}
-    #   - PORT=8080 
+    environment:
+      - SECRET_KEY=${SECRET_KEY}
+      - DEBUG=${DEBUG}
+      - ALLOWED_HOSTS=${ALLOWED_HOSTS}
+      - DATABASE_URL=${DATABASE_URL}
+      - PORT=8080 
     # OR:
-    env_file:
-      - UDL_project.env
+    # env_file:
+    #   - UDL_project.env
