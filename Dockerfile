@@ -29,12 +29,20 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy the rest of the application code to the container
 COPY . /app/
 
-# Build-time environment variables
+# Set build-time environment variables
 ARG SECRET_KEY
 ARG DEBUG
+ARG ALLOWED_HOSTS
+ARG DATABASE_URL
 
-# Collect static files (pass build arguments as environment variables)
-RUN SECRET_KEY=$SECRET_KEY DEBUG=$DEBUG  ALLOWED_HOSTS=$ALLOWED_HOSTS DATABASE_URL=$DATABASE_URL python manage.py collectstatic --noinput
+# Set environment variables for the build
+ENV SECRET_KEY=$SECRET_KEY
+ENV DEBUG=$DEBUG
+ENV ALLOWED_HOSTS=$ALLOWED_HOSTS
+ENV DATABASE_URL=$DATABASE_URL
+
+# Collect static files
+RUN python manage.py collectstatic --noinput
 
 # Expose the port the app runs on
 EXPOSE 8000
