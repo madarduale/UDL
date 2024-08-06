@@ -20,7 +20,7 @@
         const toggleVideoButton = document.getElementById('toggleVideo');
         const toggleAudioButton = document.getElementById('toggleAudio');
         const professorId = "{{ professor_id }}"; 
-        const socket = new WebSocket('ws://' + window.location.host + '/ws/video-call/' + professorId + '/');
+        const socket = new WebSocket('wss://' + window.location.host + '/ws/video-call/' + professorId + '/');
 
         let VideoEnabled = true;
         let AudioEnabled = true;
