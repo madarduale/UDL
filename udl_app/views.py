@@ -32,7 +32,7 @@ from .models import(
     Exam, ExamGrading, ExamSubmission, Semester,
     Question, Choice, Resource, EnrolledCourse,
     Discussion, Comment, Profile, LectureProgress,
-    School, Message, ZoomMeeting, BaseUser
+    School, Message, ZoomMeeting, BaseUser, LectureQuestions
 ) 
 
 from .decorators import(
@@ -982,7 +982,9 @@ def exam_list(request):
 @login_required
 def exam_detail(request, pk):
     user = request.user
-    
+    studentid=None
+    if user.is_student:
+        studentid = get_object_or_404(Student, id=user.id) 
     exam = get_object_or_404(Exam, pk=pk)
     submited_exams = ExamSubmission.objects.filter(exam=exam)
 
@@ -1004,7 +1006,8 @@ def exam_detail(request, pk):
         'form': form, 
         'current_time': current_time, 
         'group_questions_by_type': dict(group_questions_by_type),
-        'professor_id': professor_id
+        'professor_id': professor_id,
+        'studentid': studentid
         })
 
 

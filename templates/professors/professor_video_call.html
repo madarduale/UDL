@@ -9,17 +9,26 @@
     <video id="localVideo" autoplay></video>
     <video id="remoteVideo" autoplay></video>
 
-    <script>
-        const localVideo = document.getElementById('localVideo');
-        const remoteVideo = document.getElementById('remoteVideo');
-        const professorId = "{{ professor_id }}";  // Get professor's ID from the template context
-        const socket = new WebSocket('ws://' + window.location.host + '/ws/video-call/');
+    <div>
+        <button id="toggleVideo">Disable Video</button>
+        <button id="toggleAudio">Disable Audio</button>
+    </div>
 
-        let localStream;
+    <script>
+        // Video Call
+        const studentsVideos = document.getElementById('studentsVideos');
+        const toggleVideoButton = document.getElementById('toggleVideo');
+        const toggleAudioButton = document.getElementById('toggleAudio');
+        const professorId = "{{ professor_id }}"; 
+        const socket = new WebSocket('ws://' + window.location.host + '/ws/video-call/' + professorId + '/');
+
+        let VideoEnabled = true;
+        let AudioEnabled = true;
+  
+        const peerConnections = {};
 
         socket.onmessage = function(event) {
             const data = JSON.parse(event.data);
-            console.log(data.message);
             handleSignalingData(data);
         };
 
@@ -31,48 +40,57 @@
             console.log('WebSocket is closed.');
         };
 
-        navigator.mediaDevices.getUserMedia({ video: true, audio: true })
-            .then(stream => {
-                localStream = stream;
-                localVideo.srcObject = stream;
-                stream.getTracks().forEach(track => {
-                    peerConnection.addTrack(track, stream);
-                });
+        function createPeerConnection(studentId) {
+            const peerConnection = new RTCPeerConnection();
 
-                // No need to start call from professor's side, just listen
-            })
-            .catch(error => console.error('Error accessing media devices.', error));
+            peerConnection.onicecandidate = function(event) {
+                if (event.candidate) {
+                    socket.send(JSON.stringify({ type: 'candidate', candidate: event.candidate, student_id: studentId, professor_id: professorId }));
+                }
+            };
 
-        const peerConnection = new RTCPeerConnection();
+            peerConnection.ontrack = function(event) {
+                const remoteVideo = document.createElement('video');
+                remoteVideo.srcObject = event.streams[0];
+                remoteVideo.autoplay = true;
+                remoteVideo.controls = true;
+                studentsVideos.appendChild(remoteVideo);
+            };
 
-        peerConnection.ontrack = function(event) {
-            remoteVideo.srcObject = event.streams[0];
-        };
+            peerConnections[studentId] = peerConnection;
+
+            return peerConnection;
+        }
 
         function handleSignalingData(data) {
             switch(data.type) {
-                case 'offer':
-                    peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer));
-                    peerConnection.createAnswer()
-                        .then(answer => {
-                            peerConnection.setLocalDescription(answer);
-                            socket.send(JSON.stringify({ type: 'answer', answer: answer, professor_id: professorId }));
+                case 'join':
+                    const peerConnection = createPeerConnection(data.student_id);
+                    peerConnection.createOffer()
+                        .then(offer => {
+                            peerConnection.setLocalDescription(offer);
+                            socket.send(JSON.stringify({ type: 'offer', offer: offer, student_id: data.student_id, professor_id: professorId }));
                         });
                     break;
                 case 'answer':
-                    peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
+                    peerConnections[data.student_id].setRemoteDescription(new RTCSessionDescription(data.answer));
                     break;
                 case 'candidate':
-                    peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate));
+                    peerConnections[data.student_id].addIceCandidate(new RTCIceCandidate(data.candidate));
                     break;
             }
         }
+toggleVideoButton.onclick = function() {
+    videoEnabled = !videoEnabled;
+    localStream.getVideoTracks()[0].enabled = videoEnabled;
+    toggleVideoButton.textContent = videoEnabled ? 'Disable Video' : 'Enable Video';
+};
 
-        peerConnection.onicecandidate = function(event) {
-            if (event.candidate) {
-                socket.send(JSON.stringify({ type: 'candidate', candidate: event.candidate, professor_id: professorId }));
-            }
-        };
+toggleAudioButton.onclick = function() {
+    audioEnabled = !audioEnabled;
+    localStream.getAudioTracks()[0].enabled = audioEnabled;
+    toggleAudioButton.textContent = audioEnabled ? 'Disable Audio' : 'Enable Audio';
+};
     </script>
 </body>
 </html>

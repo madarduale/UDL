@@ -200,13 +200,21 @@ console.log(vidoe_id);
 
         var player;
         var questions = [
-            { time: 30, question: "What is the main topic of this video?", answer: "topic" },
-            { time: 45, question: "What is the speaker's name?", answer: "name" },
-            { time: 60, question: "Can you explain the concept discussed at 0:50?", answer: "concept" }
+        {% for question in lecture.lecture_questions.all %}
+          { 
+            time: parseFloat("{{ question.time }}") * 60, 
+            question: "{{ question.question }}", 
+            answer: "{{ question.answer }}" 
+          },
+        {% endfor %}
         ];
         var nextQuestionIndex = 0;
         var questionDisplayed = false;
         var watchedIntervals = [];
+
+        questions.sort(function(a, b) {
+            return a.time - b.time;
+        });
 
         function onYouTubeIframeAPIReady() {
             player = new YT.Player('player', {
@@ -265,8 +273,20 @@ console.log(vidoe_id);
 
         function onPlayerStateChange(event) {
             if (event.data == YT.PlayerState.ENDED) {
-                if (watchedIntervals.length >= player.getDuration()) {
+              console.log('video ended');
+              console.log('watchedinterval:', watchedIntervals.length);
+              console.log('player duration:',player.getDuration());
+              console.log(questions.length);
+              console.log(nextQuestionIndex);
+              handleVideoEnd();
+                if (player.getDuration() <= watchedIntervals.length && nextQuestionIndex >= questions.length) {
                     document.getElementById('complete-form').style.display = 'block';
+                }
+                else if (player.getDuration() > watchedIntervals.length) {
+                    alert("Please watch the entire video to mark it as complete.");
+                }
+                else if (nextQuestionIndex < questions.length) {
+                    alert("Please answer the question to mark the video as complete.");
                 }
             } else if (event.data == YT.PlayerState.PLAYING) {
                 checkTime();
@@ -278,6 +298,14 @@ console.log(vidoe_id);
             if (event.data == 100 || event.data == 101 || event.data == 150) {
                 alert("This video cannot be played.");
             }
+        }
+
+        function handleVideoEnd() {
+            var duration = Math.floor(player.getDuration());
+            if (!watchedIntervals.includes(duration)) {
+                watchedIntervals.push(duration);
+            }     
+            // displayMarkAsCompleteButton();
         }
 
         function checkTime() {
@@ -308,6 +336,10 @@ console.log(vidoe_id);
                 }
             };
         }
+
+      function displayMarkAsCompleteButton() {
+          document.getElementById('complete-form').style.display = 'block';
+      }
 </script>
 
 <style>

@@ -174,7 +174,7 @@
                 <h2>Short Answer Question</h2>
                 {% for question in questions %}
                 <li class="list-group-item">
-                    <strong>Question: {{ question.question }}</strong>
+                    <strong>Question: {{ question.question | safe }}</strong>
                     <div style="position: relative; left: 50rem; width: 10vw; bottom: 1.5rem;">
                         <span>{{question.marks}} Marks</span>
                     </div>
@@ -245,19 +245,19 @@
 
         // Video Call
         const localVideo = document.getElementById('localVideo');
-        const remoteVideo = document.getElementById('remoteVideo');
-        const toggleVideoButton = document.getElementById('toggleVideo');
         const toggleAudioButton = document.getElementById('toggleAudio');
-        const professorId = "{{ professor_id }}"; // Replace with the actual professor's ID
-        const socket = new WebSocket('ws://' + window.location.host + '/ws/video-call/');
+        const toggleVideoButton = document.getElementById('toggleVideo');
+        const professorId = "{{ professor_id }}"; 
+        const studentId = "{{ student_id }}"; 
+        const socket = new WebSocket('ws://' + window.location.host + '/ws/video-call/' + professorId + '/');
 
         let localStream;
         let videoEnabled = true;
         let audioEnabled = true;
+        const peerConnections = {};
 
         socket.onmessage = function(event) {
             const data = JSON.parse(event.data);
-            console.log(data.message);
             handleSignalingData(data);
         };
 
@@ -273,55 +273,54 @@
             .then(stream => {
                 localStream = stream;
                 localVideo.srcObject = stream;
-                stream.getTracks().forEach(track => {
-                    peerConnection.addTrack(track, stream);
-                });
-
-                startCall();
+                sendJoinMessage();
             })
             .catch(() => {
                 alert('Camera and microphone access is required to start the video call.');
-                window.location.href = '{% url "dashboard" %}';  // Redirect to home or any other appropriate page
+                window.location.href = '{% url "exam_list" %}';  // Redirect to home or any other appropriate page
             });
 
-        const peerConnection = new RTCPeerConnection();
+        function sendJoinMessage() {
+            socket.send(JSON.stringify({ type: 'join', student_id: studentId, professor_id: professorId }));
+        }
 
-        peerConnection.ontrack = function(event) {
-            remoteVideo.srcObject = event.streams[0];
-        };
+        function createPeerConnection(studentId) {
+            const peerConnection = new RTCPeerConnection();
+
+            peerConnection.onicecandidate = function(event) {
+                if (event.candidate) {
+                    socket.send(JSON.stringify({ type: 'candidate', candidate: event.candidate, student_id: studentId, professor_id: professorId }));
+                }
+            };
+
+            localStream.getTracks().forEach(track => {
+                peerConnection.addTrack(track, localStream);
+            });
+
+            peerConnections[studentId] = peerConnection;
+
+            return peerConnection;
+        }
 
         function handleSignalingData(data) {
             switch(data.type) {
                 case 'offer':
+                    const peerConnection = createPeerConnection(data.student_id);
                     peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer));
                     peerConnection.createAnswer()
                         .then(answer => {
                             peerConnection.setLocalDescription(answer);
-                            socket.send(JSON.stringify({ type: 'answer', answer: answer, professor_id: professorId }));
+                            socket.send(JSON.stringify({ type: 'answer', answer: answer, student_id: data.student_id, professor_id: professorId }));
                         });
                     break;
                 case 'answer':
-                    peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
+                    peerConnections[data.student_id].setRemoteDescription(new RTCSessionDescription(data.answer));
                     break;
                 case 'candidate':
-                    peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate));
+                    peerConnections[data.student_id].addIceCandidate(new RTCIceCandidate(data.candidate));
                     break;
             }
         }
-
-        function startCall() {
-            peerConnection.createOffer()
-                .then(offer => {
-                    peerConnection.setLocalDescription(offer);
-                    socket.send(JSON.stringify({ type: 'offer', offer: offer, professor_id: professorId }));
-                });
-        }
-
-        peerConnection.onicecandidate = function(event) {
-            if (event.candidate) {
-                socket.send(JSON.stringify({ type: 'candidate', candidate: event.candidate, professor_id: professorId }));
-            }
-        };
 
         toggleVideoButton.onclick = function() {
             videoEnabled = !videoEnabled;

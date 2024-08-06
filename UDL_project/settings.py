@@ -33,8 +33,8 @@ SECRET_KEY = env('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 # False if not in os.environ because of casting above
-# DEBUG = env('DEBUG')
-DEBUG = False
+DEBUG = env('DEBUG')
+# DEBUG = False
 
 ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=['*'])
 
@@ -63,14 +63,32 @@ INSTALLED_APPS = [
 ]
 
 ASGI_APPLICATION = 'UDL_project.asgi.application'
+# CHANNEL_LAYERS = {
+#     'default': {
+#         'BACKEND': 'channels_redis.core.RedisChannelLayer',
+#         'CONFIG': {
+#             "hosts": [('127.0.0.1', 6379)],
+#         },
+#     },
+# }
 CHANNEL_LAYERS = {
     'default': {
-        'BACKEND': 'channels_redis.core.RedisChannelLayer',
-        'CONFIG': {
-            "hosts": [('127.0.0.1', 6379)],
-        },
+        'BACKEND': 'channels.layers.InMemoryChannelLayer',
     },
 }
+
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:8000",
+    "http://127.0.0.1:8000",
+    # add your production domains
+]
+
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:8000",
+    "http://127.0.0.1:8000",
+    # add your production domains
+]
+
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -183,17 +201,17 @@ WSGI_APPLICATION = 'UDL_project.wsgi.application'
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
 DATABASES = {
-    # 'default': {
-    #     'ENGINE': 'django.db.backends.postgresql',
-    #     'NAME': env('DB_NAME'),
-    #     'USER': env('DB_USER'),
-    #     'PASSWORD': env('DB_PSW'),
-    #     # 'HOST': env('DB_HOST'),
-    #     'HOST': 'db',
-    #     'PORT': env('DB_PORT'),
-    # }
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': env('DB_NAME'),
+        'USER': env('DB_USER'),
+        'PASSWORD': env('DB_PSW'),
+        'HOST': env('DB_HOST'),
+        # 'HOST': 'db',
+        'PORT': env('DB_PORT'),
+    }
 
-        'default': dj_database_url.parse(env('DATABASE_URL'))
+        # 'default': dj_database_url.parse(env('DATABASE_URL'))
   
 }
 
