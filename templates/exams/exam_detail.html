@@ -142,7 +142,7 @@
                 <h2>Multiple Choice Questions</h2>
                 {% for question in questions %}
                 <li class="list-group-item">
-                    <strong>Question: {{ question.question }}</strong>
+                    <strong>Question: {{ question.question | safe }}</strong>
                     <div style="position: relative; left: 50rem; width: 10vw; bottom: 1.5rem;" >
                         <span>{{question.marks}} Marks</span>
                     </div>
@@ -158,7 +158,7 @@
                 <h2>True and False Questions</h2>
                 {% for question in questions %}
                 <li class="list-group-item">
-                    <strong>Question: {{ question.question }}</strong>
+                    <strong>Question: {{ question.question | safe }}</strong>
                     <div style="position: relative; left: 50rem; width: 10vw; bottom: 1.5rem;">
                         <span>{{question.marks}} Marks</span>
                     </div>
@@ -187,7 +187,7 @@
                 <h2>Long Answer Questions</h2>
                 {% for question in questions %}
                 <li class="list-group-item">
-                    <strong>Question: {{ question.question }}</strong>
+                    <strong>Question: {{ question.question | safe }}</strong>
                     <div style="position: relative; left: 50rem; width: 10vw; bottom: 1.5rem;">
                         <span>{{question.marks}} Marks</span>
                     </div>
