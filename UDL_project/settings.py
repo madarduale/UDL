@@ -33,8 +33,13 @@ SECRET_KEY = env('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 # False if not in os.environ because of casting above
-DEBUG = env('DEBUG')
+
+# DEBUG = env('DEBUG')
 # DEBUG = False
+
+# DEBUG = env('DEBUG')
+DEBUG = True
+
 
 ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=['*'])
 
