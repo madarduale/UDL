@@ -43,4 +43,5 @@ RUN python manage.py collectstatic --noinput
 EXPOSE 10000
 
 # Define the command to run the application, using the PORT environment variable
-CMD ["gunicorn", "--workers=3", "--bind=0.0.0.0:10000", "UDL_project.wsgi:application"]
+# CMD ["gunicorn", "--workers=3", "--bind=0.0.0.0:10000", "UDL_project.wsgi:application"]
+CMD ["daphne", "-b", "0.0.0.0", "-p", "10000", "UDL_project.asgi:application"]

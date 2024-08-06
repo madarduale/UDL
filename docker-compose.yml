@@ -4,7 +4,8 @@ services:
   web:
     build:
       context: .
-    command: gunicorn --workers=3 --bind=0.0.0.0:10000 UDL_project.wsgi:application
+    command: daphne -b 0.0.0.0 -p 10000 UDL_project.asgi:application
+  # command: gunicorn --workers=3 --bind=0.0.0.0:10000 UDL_project.wsgi:application
     volumes:
       - .:/app
     ports:
