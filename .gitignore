@@ -140,14 +140,7 @@ venv.bak/
 
 ./docker-compose.yml
 ./Dockerfile
-debug.log
-/todo.txt/
-./todo.txt/
-./todo.txt
-.todo.txt
-../todo.txt
-todo.txt
-UDL/todo.txt
+
 # Spyder project settings
 .spyderproject
 .spyproject
