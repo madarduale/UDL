@@ -139,7 +139,7 @@
                 {% csrf_token %}
                 {% for type, questions in group_questions_by_type.items %}
                 {% if type == 'MCQ' %}
-                <h2>Multiple Choice Question</h2>
+                <h2>Multiple Choice Questions</h2>
                 {% for question in questions %}
                 <li class="list-group-item">
                     <strong>Question: {{ question.question }}</strong>
@@ -155,7 +155,7 @@
                 </li>
                 {% endfor %}
                 {% elif type == 'TF' %}
-                <h2>True and False Question</h2>
+                <h2>True and False Questions</h2>
                 {% for question in questions %}
                 <li class="list-group-item">
                     <strong>Question: {{ question.question }}</strong>
@@ -171,7 +171,7 @@
                 </li>
                 {% endfor %}
                 {% elif type == 'SA' %}
-                <h2>Short Answer Question</h2>
+                <h2>Short Answer Questions</h2>
                 {% for question in questions %}
                 <li class="list-group-item">
                     <strong>Question: {{ question.question | safe }}</strong>
@@ -184,7 +184,7 @@
                 </li>
                 {% endfor %}
                 {% elif type == 'LA' %}
-                <h2>Long Answer Question</h2>
+                <h2>Long Answer Questions</h2>
                 {% for question in questions %}
                 <li class="list-group-item">
                     <strong>Question: {{ question.question }}</strong>
