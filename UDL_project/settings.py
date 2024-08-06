@@ -78,9 +78,17 @@ ASGI_APPLICATION = 'UDL_project.asgi.application'
 # }
 CHANNEL_LAYERS = {
     'default': {
-        'BACKEND': 'channels.layers.InMemoryChannelLayer',
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            'hosts': [('redis://redis:6379')],
+        },
     },
 }
+# CHANNEL_LAYERS = {
+#     'default': {
+#         'BACKEND': 'channels.layers.InMemoryChannelLayer',
+#     },
+# }
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:8000",
