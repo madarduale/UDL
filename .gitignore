@@ -140,7 +140,7 @@ venv.bak/
 
 ./docker-compose.yml
 ./Dockerfile
-
+debug.log
 # Spyder project settings
 .spyderproject
 .spyproject
